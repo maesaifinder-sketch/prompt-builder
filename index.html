@@ -5,17 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Prompt Builder PRO+</title>
 
-<!-- PWA Manifest (INLINE) -->
-<link rel="manifest" href="data:application/manifest+json,{
-  &quot;name&quot;:&quot;AI Prompt Builder PRO+&quot;,
-  &quot;short_name&quot;:&quot;Prompt PRO&quot;,
-  &quot;start_url&quot;:&quot;.&quot;,
-  &quot;display&quot;:&quot;standalone&quot;,
-  &quot;background_color&quot;:&quot;#111&quot;,
-  &quot;theme_color&quot;:&quot;#111&quot;
-}">
-<meta name="theme-color" content="#111">
-
 <style>
 body{margin:0;font-family:system-ui;background:#f2f2f2}
 .container{display:flex;height:100vh}
@@ -31,7 +20,7 @@ body{margin:0;font-family:system-ui;background:#f2f2f2}
 
 .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
 .group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
-h2{margin:0 0 6px 0;font-size:16px}
+h2{margin:0 0 6px 0;font-size:17px}
 select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
 .row{display:flex;gap:6px;margin-top:6px}
 .add{background:#28a745;color:#fff;border:none}
@@ -42,18 +31,37 @@ select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius
 </head>
 
 <body>
-
 <div class="container">
 
-<div class="left" id="left">
+<!-- LEFT -->
+<div class="left">
+
+  <!-- TOP BAR -->
   <div class="topbar">
     <button class="btn-blue" onclick="modeImage()">🖼 สร้างภาพ</button>
     <button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
     <button class="btn-green" onclick="modeVoice()">🎤 เสียงพากย์</button>
     <button class="btn-orange" onclick="modeSub()">✍️ ซับไตเติล</button>
   </div>
+
+  <!-- PRESET SORA (ถาวร ไม่โดน render ทับ) -->
+  <div class="card">
+    <h2>🎬 Preset Sora</h2>
+    <select id="presetSora" onchange="loadPreset()"></select>
+    <input id="presetName" placeholder="ชื่อ Preset">
+    <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>
+    <div class="row">
+      <button class="add" onclick="savePreset()">💾 บันทึก</button>
+      <button class="del" onclick="deletePreset()">🗑 ลบ</button>
+    </div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="menu"></div>
+
 </div>
 
+<!-- RIGHT -->
 <div class="right">
   <h2>📄 Prompt ที่ได้</h2>
   <textarea id="result" class="output" readonly></textarea>
@@ -63,33 +71,57 @@ select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius
 </div>
 
 <script>
-/* =========================
-   SERVICE WORKER (INLINE)
-========================= */
-if ('serviceWorker' in navigator) {
-  const sw = `
-    self.addEventListener('install',e=>{
-      e.waitUntil(
-        caches.open('prompt-pro').then(c=>c.addAll(['./']))
-      );
-    });
-    self.addEventListener('fetch',e=>{
-      e.respondWith(
-        caches.match(e.request).then(r=>r||fetch(e.request))
-      );
-    });
-  `;
-  const blob=new Blob([sw],{type:'text/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob));
+/* STORAGE */
+const LS="PROMPT_BUILDER_DATA";
+const LS_PRESET="SORA_PRESETS";
+
+/* PRESET */
+const presetSora=document.getElementById("presetSora");
+const presetName=document.getElementById("presetName");
+const presetText=document.getElementById("presetText");
+const result=document.getElementById("result");
+
+let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {
+  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}
+};
+
+function renderPresets(){
+  presetSora.innerHTML="";
+  Object.keys(soraPresets).forEach(k=>{
+    const o=document.createElement("option");
+    o.value=k;
+    o.textContent=soraPresets[k].name;
+    presetSora.appendChild(o);
+  });
+  loadPreset();
 }
 
-/* =========================
-   APP LOGIC
-========================= */
-const LS="PROMPT_BUILDER_FINAL";
+function loadPreset(){
+  const p=soraPresets[presetSora.value];
+  if(!p) return;
+  presetName.value=p.name;
+  presetText.value=p.text;
+  update();
+}
 
+function savePreset(){
+  if(!presetName.value) return alert("กรอกชื่อ Preset");
+  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");
+  soraPresets[k]={name:presetName.value,text:presetText.value};
+  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));
+  renderPresets();
+  presetSora.value=k;
+}
+
+function deletePreset(){
+  delete soraPresets[presetSora.value];
+  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));
+  renderPresets();
+}
+
+/* DATA */
 let data=JSON.parse(localStorage.getItem(LS)) || {
-  image:{enabled:false,items:["แต่งภาพสินค้า 9:16"]},
+  image:{enabled:false,items:["แต่งภาพ 9:16"]},
   product:{enabled:false,items:["ท็อปเปอร์"]},
   work:{enabled:false,items:["UGC รีวิว"]},
   model:{enabled:false,items:["นางแบบเอเชีย"]},
@@ -105,10 +137,8 @@ function section(title,key){
   const c=data[key];
   return `
   <div class="card">
-    <h2>
-      <input type="checkbox" ${c.enabled?"checked":""}
-      onchange="toggle('${key}',this.checked)"> ${title}
-    </h2>
+    <h2><input type="checkbox" ${c.enabled?"checked":""}
+      onchange="toggle('${key}',this.checked)"> ${title}</h2>
     <select id="${key}_s" onchange="update()">
       ${c.items.map(v=>`<option>${v}</option>`).join("")}
     </select>
@@ -121,9 +151,8 @@ function section(title,key){
 }
 
 function render(){
-  const l=document.getElementById("left");
-  l.innerHTML=l.innerHTML.split("</div>")[0]+"</div>";
-  l.innerHTML+=
+  const m=document.getElementById("menu");
+  m.innerHTML=
     section("🖼 หมวดสร้างภาพ","image")+
     section("📦 หมวดสินค้า","product")+
     `<div class="group">
@@ -133,56 +162,47 @@ function render(){
       ${section("🌤 บรรยากาศ","mood")}
     </div>`+
     section("🎤 เสียงพากย์","voice")+
-    section("✍️ สร้างซัพไตเติล","subtitle");
+    section("✍️ สร้างซับไตเติล","subtitle");
   update();
 }
 
 function toggle(k,v){data[k].enabled=v;save();update();}
-function add(k){
-  const i=document.getElementById(k+"_i");
-  if(!i.value)return;
-  data[k].items.push(i.value);
-  i.value="";
-  save();render();
-}
-function delItem(k){
-  const s=document.getElementById(k+"_s");
-  data[k].items.splice(s.selectedIndex,1);
-  save();render();
-}
+function add(k){const i=document.getElementById(k+"_i");if(!i.value)return;data[k].items.push(i.value);i.value="";save();render();}
+function delItem(k){const s=document.getElementById(k+"_s");data[k].items.splice(s.selectedIndex,1);save();render();}
 
 function line(t,k){
   if(!data[k].enabled) return "";
   const s=document.getElementById(k+"_s");
-  return s?.value?`${t}: ${s.value}\n`:"";
+  return s?`${t}: ${s.value}\n`:"";
 }
 
 function update(){
+  const p=soraPresets[presetSora.value];
   result.value=
-    line("สร้างภาพ","image")+
-    line("สินค้า","product")+
-    line("ประเภทงาน","work")+
-    line("นายแบบ/นางแบบ","model")+
-    line("สไตล์ VDO","style")+
-    line("บรรยากาศ","mood")+
-    line("เสียงพากย์","voice")+
-    line("ซับไตเติล","subtitle");
+`### PRESET SORA ###
+${p?p.text:""}
+
+### DETAIL ###
+${line("สร้างภาพ","image")}
+${line("สินค้า","product")}
+${line("ประเภทงาน","work")}
+${line("นายแบบ","model")}
+${line("สไตล์","style")}
+${line("บรรยากาศ","mood")}
+${line("เสียงพากย์","voice")}
+${line("ซับ","subtitle")}`;
 }
 
 function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}
-
 function modeImage(){resetAll();data.image.enabled=true;save();render();}
 function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
 function modeVoice(){resetAll();data.voice.enabled=true;save();render();}
 function modeSub(){resetAll();data.subtitle.enabled=true;save();render();}
 
-function copyText(){
-  result.select();
-  document.execCommand("copy");
-}
+function copyText(){result.select();document.execCommand("copy");}
 
+renderPresets();
 render();
 </script>
-
 </body>
 </html>
