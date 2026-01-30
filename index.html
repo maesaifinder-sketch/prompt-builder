@@ -2,151 +2,129 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI Prompt Builder PRO+</title>
 
-<!-- PWA MANIFEST -->
-<link rel="manifest" href="data:application/json,{
+<meta name="theme-color" content="#111">
+
+<!-- PWA -->
+<link rel="manifest" href="data:application/manifest+json,{
   &quot;name&quot;:&quot;AI Prompt Builder PRO+&quot;,
-  &quot;short_name&quot;:&quot;PromptPRO&quot;,
+  &quot;short_name&quot;:&quot;Prompt PRO&quot;,
   &quot;start_url&quot;:&quot;.&quot;,
   &quot;display&quot;:&quot;standalone&quot;,
-  &quot;background_color&quot;:&quot;#000000&quot;,
-  &quot;theme_color&quot;:&quot;#000000&quot;
+  &quot;background_color&quot;:&quot;#111&quot;,
+  &quot;theme_color&quot;:&quot;#111&quot;
 }">
 
 <style>
 body{margin:0;font-family:system-ui;background:#f2f2f2}
-.container{display:flex;height:100vh}
-.left{width:70%;padding:12px;overflow:auto}
-.right{width:30%;background:#000;color:#0f0;padding:12px;position:fixed;right:0;top:0;height:100%}
-
-.topbar{display:flex;gap:6px;margin-bottom:12px}
-.topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold}
-
-.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
-.group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
-h2{margin:0 0 6px 0;font-size:17px}
-select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
-.row{display:flex;gap:6px;margin-top:6px}
-.add{background:#28a745;color:#fff;border:none}
-.del{background:#dc3545;color:#fff;border:none}
-.copy{background:#6c757d;color:#fff;border:none}
-.output{height:85%;background:#000;color:#0f0;font-family:monospace}
+header{background:#111;color:#fff;padding:12px;font-weight:bold}
+.main{display:flex;height:calc(100vh - 48px)}
+.left{width:70%;overflow:auto;padding:12px}
+.right{width:30%;background:#000;padding:12px;position:sticky;top:0}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px}
+h3{margin:0 0 8px}
+textarea,select,input,button{
+  width:100%;margin-top:6px;padding:10px;
+  border-radius:8px;border:1px solid #ccc;font-size:15px
+}
+button{border:none;cursor:pointer}
+.green{background:#28a745;color:#fff}
+.red{background:#dc3545;color:#fff}
+.gray{background:#6c757d;color:#fff}
+.output{background:#000;color:#0f0;font-family:monospace;height:90%}
+.row{display:flex;gap:6px}
+hr{border:none;border-top:1px dashed #ccc;margin:12px 0}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-<div class="left" id="left">
-  <div class="topbar">
-    <button onclick="modeImage()">🖼 สร้างภาพ</button>
-    <button onclick="modeWork()">🧩 งาน</button>
-    <button onclick="modeVoice()">🎤 เสียงพากย์</button>
-    <button onclick="modeSub()">✍️ ซัพไตเติล</button>
+<header>🧠 AI Prompt Builder PRO+ (Offline)</header>
+
+<div class="main">
+
+<div class="left">
+
+  <div class="card">
+    <h3>📦 สินค้า</h3>
+    <select id="product"></select>
+    <input id="newProduct" placeholder="เพิ่มสินค้า">
+    <div class="row">
+      <button class="green" onclick="addProduct()">เพิ่ม</button>
+      <button class="red" onclick="delProduct()">ลบ</button>
+    </div>
   </div>
+
+  <hr>
+
+  <div class="card">
+    <h3>🧩 ประเภทงาน</h3>
+    <select id="job"></select>
+    <input id="jobName" placeholder="ชื่อประเภทงาน">
+    <textarea id="jobTpl" placeholder="ใช้ ${p} แทนชื่อสินค้า"></textarea>
+    <div class="row">
+      <button class="green" onclick="saveJob()">บันทึก</button>
+      <button class="red" onclick="delJob()">ลบ</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="right">
-  <h2>📄 Prompt</h2>
+  <h3 style="color:#fff">📄 Prompt</h3>
   <textarea id="result" class="output" readonly></textarea>
-  <button class="copy" onclick="copy()">📋 Copy</button>
+  <button class="gray" onclick="copy()">📋 Copy</button>
 </div>
+
 </div>
 
 <script>
-/* ===== SERVICE WORKER (INLINE) ===== */
-if("serviceWorker" in navigator){
-  const swCode = `
-    self.addEventListener('install',e=>self.skipWaiting());
+/* ===== Service Worker (INLINE) ===== */
+if('serviceWorker' in navigator){
+  const sw = `
+    self.addEventListener('install',e=>{
+      e.waitUntil(caches.open('pwa').then(c=>c.addAll(['./'])))
+    })
     self.addEventListener('fetch',e=>{
-      e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
-    });
+      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))
+    })
   `;
-  const blob=new Blob([swCode],{type:"text/javascript"});
-  const swURL=URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swURL);
+  navigator.serviceWorker.register(URL.createObjectURL(
+    new Blob([sw],{type:'text/javascript'})
+  ));
 }
 
-/* ===== APP DATA ===== */
-const LS="PROMPT_PWA";
-let data=JSON.parse(localStorage.getItem(LS))||{
-  image:{enabled:false,items:["แต่งภาพ 9:16"]},
-  product:{enabled:false,items:["ท็อปเปอร์"]},
-  work:{enabled:false,items:["UGC รีวิว"]},
-  model:{enabled:false,items:["นางแบบเอเชีย"]},
-  style:{enabled:false,items:["Luxury"]},
-  mood:{enabled:false,items:["อบอุ่น"]},
-  voice:{enabled:false,items:["เสียงผู้หญิง"]},
-  subtitle:{enabled:false,items:["ซับขาย"]}
-};
-function save(){localStorage.setItem(LS,JSON.stringify(data));}
+/* ===== App Logic ===== */
+const LS_P="p",LS_J="j";
+let P=JSON.parse(localStorage.getItem(LS_P))||["ท็อปเปอร์"];
+let J=JSON.parse(localStorage.getItem(LS_J))||[
+  {n:"UGC Sora",t:"สร้างวิดีโอรีวิว ${p} แบบลูกค้าจริง"}
+];
 
-function section(t,k){
-  const c=data[k];
-  return `
-  <div class="card">
-    <h2><input type="checkbox" ${c.enabled?"checked":""}
-      onchange="toggle('${k}',this.checked)"> ${t}</h2>
-    <select id="${k}_s" onchange="update()">
-      ${c.items.map(v=>`<option>${v}</option>`).join("")}
-    </select>
-    <input id="${k}_i" placeholder="เพิ่ม / แก้ไข">
-    <div class="row">
-      <button class="add" onclick="add('${k}')">➕</button>
-      <button class="del" onclick="del('${k}')">🗑</button>
-    </div>
-  </div>`;
-}
+const $=id=>document.getElementById(id);
 
+function save(){localStorage.setItem(LS_P,JSON.stringify(P));localStorage.setItem(LS_J,JSON.stringify(J))}
 function render(){
-  const l=document.getElementById("left");
-  l.innerHTML=l.innerHTML.split("</div>")[0]+"</div>";
-  l.innerHTML+=
-    section("🖼 สร้างภาพ","image")+
-    section("📦 สินค้า","product")+
-    `<div class="group">
-      ${section("🧠 ประเภทงาน","work")}
-      ${section("👤 นายแบบ","model")}
-      ${section("🎬 สไตล์","style")}
-      ${section("🌤 บรรยากาศ","mood")}
-    </div>`+
-    section("🎤 เสียงพากย์","voice")+
-    section("✍️ ซับไตเติล","subtitle");
+  product.innerHTML=P.map((v,i)=>`<option value=${i}>${v}</option>`).join("");
+  job.innerHTML=J.map((v,i)=>`<option value=${i}>${v.n}</option>`).join("");
   update();
 }
-
-function toggle(k,v){data[k].enabled=v;save();update();}
-function add(k){const i=document.getElementById(k+"_i");if(!i.value)return;data[k].items.push(i.value);i.value="";save();render();}
-function del(k){const s=document.getElementById(k+"_s");data[k].items.splice(s.selectedIndex,1);save();render();}
-
-function line(t,k){
-  if(!data[k].enabled) return "";
-  const s=document.getElementById(k+"_s");
-  return s?.value?`${t}: ${s.value}\n`:"";
-}
-
 function update(){
-  result.value=
-    line("สร้างภาพ","image")+
-    line("สินค้า","product")+
-    line("ประเภทงาน","work")+
-    line("นายแบบ","model")+
-    line("สไตล์","style")+
-    line("บรรยากาศ","mood")+
-    line("เสียงพากย์","voice")+
-    line("ซับไตเติล","subtitle");
+  if(!P.length||!J.length)return;
+  jobName.value=J[job.value].n;
+  jobTpl.value=J[job.value].t;
+  result.value=J[job.value].t.replaceAll("${p}",P[product.value]);
 }
 
-function reset(){Object.keys(data).forEach(k=>data[k].enabled=false);}
-function modeImage(){reset();data.image.enabled=true;save();render();}
-function modeWork(){reset();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
-function modeVoice(){reset();data.voice.enabled=true;save();render();}
-function modeSub(){reset();data.subtitle.enabled=true;save();render();}
+function addProduct(){if(newProduct.value){P.push(newProduct.value);newProduct.value="";save();render()}}
+function delProduct(){P.splice(product.value,1);save();render()}
+function saveJob(){J[job.value]={n:jobName.value,t:jobTpl.value};save();render()}
+function delJob(){J.splice(job.value,1);save();render()}
+function copy(){navigator.clipboard.writeText(result.value)}
 
-function copy(){result.select();document.execCommand("copy");}
-
+product.onchange=job.onchange=update;
 render();
 </script>
 
