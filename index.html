@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Builder PRO+</title>
+
+<!-- PWA MANIFEST -->
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;:&quot;AI Prompt Builder PRO+&quot;,
+  &quot;short_name&quot;:&quot;PromptPRO&quot;,
+  &quot;start_url&quot;:&quot;.&quot;,
+  &quot;display&quot;:&quot;standalone&quot;,
+  &quot;background_color&quot;:&quot;#000000&quot;,
+  &quot;theme_color&quot;:&quot;#000000&quot;
+}">
+
+<style>
+body{margin:0;font-family:system-ui;background:#f2f2f2}
+.container{display:flex;height:100vh}
+.left{width:70%;padding:12px;overflow:auto}
+.right{width:30%;background:#000;color:#0f0;padding:12px;position:fixed;right:0;top:0;height:100%}
+
+.topbar{display:flex;gap:6px;margin-bottom:12px}
+.topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold}
+
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
+.group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
+h2{margin:0 0 6px 0;font-size:17px}
+select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
+.row{display:flex;gap:6px;margin-top:6px}
+.add{background:#28a745;color:#fff;border:none}
+.del{background:#dc3545;color:#fff;border:none}
+.copy{background:#6c757d;color:#fff;border:none}
+.output{height:85%;background:#000;color:#0f0;font-family:monospace}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="left" id="left">
+  <div class="topbar">
+    <button onclick="modeImage()">🖼 สร้างภาพ</button>
+    <button onclick="modeWork()">🧩 งาน</button>
+    <button onclick="modeVoice()">🎤 เสียงพากย์</button>
+    <button onclick="modeSub()">✍️ ซัพไตเติล</button>
+  </div>
+</div>
+
+<div class="right">
+  <h2>📄 Prompt</h2>
+  <textarea id="result" class="output" readonly></textarea>
+  <button class="copy" onclick="copy()">📋 Copy</button>
+</div>
+</div>
+
+<script>
+/* ===== SERVICE WORKER (INLINE) ===== */
+if("serviceWorker" in navigator){
+  const swCode = `
+    self.addEventListener('install',e=>self.skipWaiting());
+    self.addEventListener('fetch',e=>{
+      e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+    });
+  `;
+  const blob=new Blob([swCode],{type:"text/javascript"});
+  const swURL=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL);
+}
+
+/* ===== APP DATA ===== */
+const LS="PROMPT_PWA";
+let data=JSON.parse(localStorage.getItem(LS))||{
+  image:{enabled:false,items:["แต่งภาพ 9:16"]},
+  product:{enabled:false,items:["ท็อปเปอร์"]},
+  work:{enabled:false,items:["UGC รีวิว"]},
+  model:{enabled:false,items:["นางแบบเอเชีย"]},
+  style:{enabled:false,items:["Luxury"]},
+  mood:{enabled:false,items:["อบอุ่น"]},
+  voice:{enabled:false,items:["เสียงผู้หญิง"]},
+  subtitle:{enabled:false,items:["ซับขาย"]}
+};
+function save(){localStorage.setItem(LS,JSON.stringify(data));}
+
+function section(t,k){
+  const c=data[k];
+  return `
+  <div class="card">
+    <h2><input type="checkbox" ${c.enabled?"checked":""}
+      onchange="toggle('${k}',this.checked)"> ${t}</h2>
+    <select id="${k}_s" onchange="update()">
+      ${c.items.map(v=>`<option>${v}</option>`).join("")}
+    </select>
+    <input id="${k}_i" placeholder="เพิ่ม / แก้ไข">
+    <div class="row">
+      <button class="add" onclick="add('${k}')">➕</button>
+      <button class="del" onclick="del('${k}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const l=document.getElementById("left");
+  l.innerHTML=l.innerHTML.split("</div>")[0]+"</div>";
+  l.innerHTML+=
+    section("🖼 สร้างภาพ","image")+
+    section("📦 สินค้า","product")+
+    `<div class="group">
+      ${section("🧠 ประเภทงาน","work")}
+      ${section("👤 นายแบบ","model")}
+      ${section("🎬 สไตล์","style")}
+      ${section("🌤 บรรยากาศ","mood")}
+    </div>`+
+    section("🎤 เสียงพากย์","voice")+
+    section("✍️ ซับไตเติล","subtitle");
+  update();
+}
+
+function toggle(k,v){data[k].enabled=v;save();update();}
+function add(k){const i=document.getElementById(k+"_i");if(!i.value)return;data[k].items.push(i.value);i.value="";save();render();}
+function del(k){const s=document.getElementById(k+"_s");data[k].items.splice(s.selectedIndex,1);save();render();}
+
+function line(t,k){
+  if(!data[k].enabled) return "";
+  const s=document.getElementById(k+"_s");
+  return s?.value?`${t}: ${s.value}\n`:"";
+}
+
+function update(){
+  result.value=
+    line("สร้างภาพ","image")+
+    line("สินค้า","product")+
+    line("ประเภทงาน","work")+
+    line("นายแบบ","model")+
+    line("สไตล์","style")+
+    line("บรรยากาศ","mood")+
+    line("เสียงพากย์","voice")+
+    line("ซับไตเติล","subtitle");
+}
+
+function reset(){Object.keys(data).forEach(k=>data[k].enabled=false);}
+function modeImage(){reset();data.image.enabled=true;save();render();}
+function modeWork(){reset();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
+function modeVoice(){reset();data.voice.enabled=true;save();render();}
+function modeSub(){reset();data.subtitle.enabled=true;save();render();}
+
+function copy(){result.select();document.execCommand("copy");}
+
+render();
+</script>
+
+</body>
+</html>
