@@ -4,39 +4,185 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Prompt Builder PRO+</title>
+
+<!-- PWA Manifest (INLINE) -->
+<link rel="manifest" href="data:application/manifest+json,{
+  &quot;name&quot;:&quot;AI Prompt Builder PRO+&quot;,
+  &quot;short_name&quot;:&quot;Prompt PRO&quot;,
+  &quot;start_url&quot;:&quot;.&quot;,
+  &quot;display&quot;:&quot;standalone&quot;,
+  &quot;background_color&quot;:&quot;#111&quot;,
+  &quot;theme_color&quot;:&quot;#111&quot;
+}">
 <meta name="theme-color" content="#111">
-<link rel="manifest" href="manifest.json">
+
 <style>
 body{margin:0;font-family:system-ui;background:#f2f2f2}
 .container{display:flex;height:100vh}
 .left{width:70%;padding:12px;overflow:auto}
-.right{width:30%;background:#111;color:#0f0;padding:12px}
+.right{width:30%;background:#111;color:#0f0;padding:12px;position:fixed;right:0;top:0;height:100%}
+
 .topbar{display:flex;gap:6px;margin-bottom:12px}
-.topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold}
-.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px}
-.output{height:80%;background:#000;color:#0f0}
-@media (max-width:900px){
-.container{flex-direction:column}
-.left,.right{width:100%}
-.right{height:40vh}
-}
+.topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
+.btn-blue{background:#007bff;color:#fff}
+.btn-purple{background:#6f42c1;color:#fff}
+.btn-green{background:#28a745;color:#fff}
+.btn-orange{background:#fd7e14;color:#fff}
+
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
+.group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
+h2{margin:0 0 6px 0;font-size:16px}
+select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
+.row{display:flex;gap:6px;margin-top:6px}
+.add{background:#28a745;color:#fff;border:none}
+.del{background:#dc3545;color:#fff;border:none}
+.copy{background:#6c757d;color:#fff;border:none}
+.output{height:85%;background:#000;color:#0f0;font-family:monospace}
 </style>
 </head>
+
 <body>
+
 <div class="container">
-<div class="left">
-<div class="topbar">
-<button>🖼 สร้างภาพ</button>
-<button>🧩 งาน</button>
-<button>🎤 เสียงพากย์</button>
-<button>✍️ ซับไตเติล</button>
+
+<div class="left" id="left">
+  <div class="topbar">
+    <button class="btn-blue" onclick="modeImage()">🖼 สร้างภาพ</button>
+    <button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
+    <button class="btn-green" onclick="modeVoice()">🎤 เสียงพากย์</button>
+    <button class="btn-orange" onclick="modeSub()">✍️ ซับไตเติล</button>
+  </div>
 </div>
-<div class="card">พร้อมใช้งานบน GitHub Pages + PWA</div>
-</div>
+
 <div class="right">
-<h3>Prompt ที่ได้</h3>
-<textarea class="output"></textarea>
+  <h2>📄 Prompt ที่ได้</h2>
+  <textarea id="result" class="output" readonly></textarea>
+  <button class="copy" onclick="copyText()">📋 Copy</button>
 </div>
+
 </div>
+
+<script>
+/* =========================
+   SERVICE WORKER (INLINE)
+========================= */
+if ('serviceWorker' in navigator) {
+  const sw = `
+    self.addEventListener('install',e=>{
+      e.waitUntil(
+        caches.open('prompt-pro').then(c=>c.addAll(['./']))
+      );
+    });
+    self.addEventListener('fetch',e=>{
+      e.respondWith(
+        caches.match(e.request).then(r=>r||fetch(e.request))
+      );
+    });
+  `;
+  const blob=new Blob([sw],{type:'text/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+
+/* =========================
+   APP LOGIC
+========================= */
+const LS="PROMPT_BUILDER_FINAL";
+
+let data=JSON.parse(localStorage.getItem(LS)) || {
+  image:{enabled:false,items:["แต่งภาพสินค้า 9:16"]},
+  product:{enabled:false,items:["ท็อปเปอร์"]},
+  work:{enabled:false,items:["UGC รีวิว"]},
+  model:{enabled:false,items:["นางแบบเอเชีย"]},
+  style:{enabled:false,items:["Luxury"]},
+  mood:{enabled:false,items:["อบอุ่น"]},
+  voice:{enabled:false,items:["เสียงผู้หญิง"]},
+  subtitle:{enabled:false,items:["ซับขาย"]}
+};
+
+function save(){localStorage.setItem(LS,JSON.stringify(data));}
+
+function section(title,key){
+  const c=data[key];
+  return `
+  <div class="card">
+    <h2>
+      <input type="checkbox" ${c.enabled?"checked":""}
+      onchange="toggle('${key}',this.checked)"> ${title}
+    </h2>
+    <select id="${key}_s" onchange="update()">
+      ${c.items.map(v=>`<option>${v}</option>`).join("")}
+    </select>
+    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">
+    <div class="row">
+      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>
+      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const l=document.getElementById("left");
+  l.innerHTML=l.innerHTML.split("</div>")[0]+"</div>";
+  l.innerHTML+=
+    section("🖼 หมวดสร้างภาพ","image")+
+    section("📦 หมวดสินค้า","product")+
+    `<div class="group">
+      ${section("🧠 ประเภทงาน","work")}
+      ${section("👤 นายแบบ / นางแบบ","model")}
+      ${section("🎬 สไตล์ VDO","style")}
+      ${section("🌤 บรรยากาศ","mood")}
+    </div>`+
+    section("🎤 เสียงพากย์","voice")+
+    section("✍️ สร้างซัพไตเติล","subtitle");
+  update();
+}
+
+function toggle(k,v){data[k].enabled=v;save();update();}
+function add(k){
+  const i=document.getElementById(k+"_i");
+  if(!i.value)return;
+  data[k].items.push(i.value);
+  i.value="";
+  save();render();
+}
+function delItem(k){
+  const s=document.getElementById(k+"_s");
+  data[k].items.splice(s.selectedIndex,1);
+  save();render();
+}
+
+function line(t,k){
+  if(!data[k].enabled) return "";
+  const s=document.getElementById(k+"_s");
+  return s?.value?`${t}: ${s.value}\n`:"";
+}
+
+function update(){
+  result.value=
+    line("สร้างภาพ","image")+
+    line("สินค้า","product")+
+    line("ประเภทงาน","work")+
+    line("นายแบบ/นางแบบ","model")+
+    line("สไตล์ VDO","style")+
+    line("บรรยากาศ","mood")+
+    line("เสียงพากย์","voice")+
+    line("ซับไตเติล","subtitle");
+}
+
+function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}
+
+function modeImage(){resetAll();data.image.enabled=true;save();render();}
+function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
+function modeVoice(){resetAll();data.voice.enabled=true;save();render();}
+function modeSub(){resetAll();data.subtitle.enabled=true;save();render();}
+
+function copyText(){
+  result.select();
+  document.execCommand("copy");
+}
+
+render();
+</script>
+
 </body>
 </html>
