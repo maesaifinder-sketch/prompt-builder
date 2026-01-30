@@ -1,8 +1,0 @@
-{
-  "name": "AI Prompt Builder PRO+",
-  "short_name": "Prompt PRO",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#111",
-  "theme_color": "#111"
-}
