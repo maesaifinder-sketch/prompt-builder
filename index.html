@@ -1,208 +1,296 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Prompt Builder PRO+</title>
-
-<style>
-body{margin:0;font-family:system-ui;background:#f2f2f2}
-.container{display:flex;height:100vh}
-.left{width:70%;padding:12px;overflow:auto}
-.right{width:30%;background:#111;color:#0f0;padding:12px;position:fixed;right:0;top:0;height:100%}
-
-.topbar{display:flex;gap:6px;margin-bottom:12px}
-.topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-.btn-blue{background:#007bff;color:#fff}
-.btn-purple{background:#6f42c1;color:#fff}
-.btn-green{background:#28a745;color:#fff}
-.btn-orange{background:#fd7e14;color:#fff}
-
-.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
-.group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
-h2{margin:0 0 6px 0;font-size:17px}
-select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
-.row{display:flex;gap:6px;margin-top:6px}
-.add{background:#28a745;color:#fff;border:none}
-.del{background:#dc3545;color:#fff;border:none}
-.copy{background:#6c757d;color:#fff;border:none}
-.output{height:85%;background:#000;color:#0f0;font-family:monospace}
-</style>
-</head>
-
-<body>
-<div class="container">
-
-<!-- LEFT -->
-<div class="left">
-
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <button class="btn-blue" onclick="modeImage()">🖼 สร้างภาพ</button>
-    <button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
-    <button class="btn-green" onclick="modeVoice()">🎤 เสียงพากย์</button>
-    <button class="btn-orange" onclick="modeSub()">✍️ ซับไตเติล</button>
-  </div>
-
-  <!-- PRESET SORA (ถาวร ไม่โดน render ทับ) -->
-  <div class="card">
-    <h2>🎬 Preset Sora</h2>
-    <select id="presetSora" onchange="loadPreset()"></select>
-    <input id="presetName" placeholder="ชื่อ Preset">
-    <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>
-    <div class="row">
-      <button class="add" onclick="savePreset()">💾 บันทึก</button>
-      <button class="del" onclick="deletePreset()">🗑 ลบ</button>
-    </div>
-  </div>
-
-  <!-- MAIN MENU -->
-  <div id="menu"></div>
-
-</div>
-
-<!-- RIGHT -->
-<div class="right">
-  <h2>📄 Prompt ที่ได้</h2>
-  <textarea id="result" class="output" readonly></textarea>
-  <button class="copy" onclick="copyText()">📋 Copy</button>
-</div>
-
-</div>
-
-<script>
-/* STORAGE */
-const LS="PROMPT_BUILDER_DATA";
-const LS_PRESET="SORA_PRESETS";
-
-/* PRESET */
-const presetSora=document.getElementById("presetSora");
-const presetName=document.getElementById("presetName");
-const presetText=document.getElementById("presetText");
-const result=document.getElementById("result");
-
-let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {
-  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}
-};
-
-function renderPresets(){
-  presetSora.innerHTML="";
-  Object.keys(soraPresets).forEach(k=>{
-    const o=document.createElement("option");
-    o.value=k;
-    o.textContent=soraPresets[k].name;
-    presetSora.appendChild(o);
-  });
-  loadPreset();
-}
-
-function loadPreset(){
-  const p=soraPresets[presetSora.value];
-  if(!p) return;
-  presetName.value=p.name;
-  presetText.value=p.text;
-  update();
-}
-
-function savePreset(){
-  if(!presetName.value) return alert("กรอกชื่อ Preset");
-  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");
-  soraPresets[k]={name:presetName.value,text:presetText.value};
-  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));
-  renderPresets();
-  presetSora.value=k;
-}
-
-function deletePreset(){
-  delete soraPresets[presetSora.value];
-  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));
-  renderPresets();
-}
-
-/* DATA */
-let data=JSON.parse(localStorage.getItem(LS)) || {
-  image:{enabled:false,items:["แต่งภาพ 9:16"]},
-  product:{enabled:false,items:["ท็อปเปอร์"]},
-  work:{enabled:false,items:["UGC รีวิว"]},
-  model:{enabled:false,items:["นางแบบเอเชีย"]},
-  style:{enabled:false,items:["Luxury"]},
-  mood:{enabled:false,items:["อบอุ่น"]},
-  voice:{enabled:false,items:["เสียงผู้หญิง"]},
-  subtitle:{enabled:false,items:["ซับขาย"]}
-};
-
-function save(){localStorage.setItem(LS,JSON.stringify(data));}
-
-function section(title,key){
-  const c=data[key];
-  return `
-  <div class="card">
-    <h2><input type="checkbox" ${c.enabled?"checked":""}
-      onchange="toggle('${key}',this.checked)"> ${title}</h2>
-    <select id="${key}_s" onchange="update()">
-      ${c.items.map(v=>`<option>${v}</option>`).join("")}
-    </select>
-    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">
-    <div class="row">
-      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>
-      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>
-    </div>
-  </div>`;
-}
-
-function render(){
-  const m=document.getElementById("menu");
-  m.innerHTML=
-    section("🖼 หมวดสร้างภาพ","image")+
-    section("📦 หมวดสินค้า","product")+
-    `<div class="group">
-      ${section("🧠 ประเภทงาน","work")}
-      ${section("👤 นายแบบ / นางแบบ","model")}
-      ${section("🎬 สไตล์ VDO","style")}
-      ${section("🌤 บรรยากาศ","mood")}
-    </div>`+
-    section("🎤 เสียงพากย์","voice")+
-    section("✍️ สร้างซับไตเติล","subtitle");
-  update();
-}
-
-function toggle(k,v){data[k].enabled=v;save();update();}
-function add(k){const i=document.getElementById(k+"_i");if(!i.value)return;data[k].items.push(i.value);i.value="";save();render();}
-function delItem(k){const s=document.getElementById(k+"_s");data[k].items.splice(s.selectedIndex,1);save();render();}
-
-function line(t,k){
-  if(!data[k].enabled) return "";
-  const s=document.getElementById(k+"_s");
-  return s?`${t}: ${s.value}\n`:"";
-}
-
-function update(){
-  const p=soraPresets[presetSora.value];
-  result.value=
-`### PRESET SORA ###
-${p?p.text:""}
-
-### DETAIL ###
-${line("สร้างภาพ","image")}
-${line("สินค้า","product")}
-${line("ประเภทงาน","work")}
-${line("นายแบบ","model")}
-${line("สไตล์","style")}
-${line("บรรยากาศ","mood")}
-${line("เสียงพากย์","voice")}
-${line("ซับ","subtitle")}`;
-}
-
-function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}
-function modeImage(){resetAll();data.image.enabled=true;save();render();}
-function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
-function modeVoice(){resetAll();data.voice.enabled=true;save();render();}
-function modeSub(){resetAll();data.subtitle.enabled=true;save();render();}
-
-function copyText(){result.select();document.execCommand("copy");}
-
-renderPresets();
-render();
-</script>
-</body>
-</html>
+<!DOCTYPE html>  <html lang="th">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>AI Prompt Builder PRO+</title>  <style>  
+body{  
+  margin:0;  
+  font-family:system-ui;  
+  background:#f2f2f2;  
+}  
+.container{  
+  display:flex;  
+  height:100vh;  
+}  
+  
+/* LEFT */  
+.left{  
+  width:70%;  
+  padding:12px;  
+  margin-right:30%;  
+  overflow:auto;  
+}  
+  
+/* RIGHT */  
+.right{  
+  width:30%;  
+  background:#111;  
+  color:#0f0;  
+  padding:12px;  
+  position:fixed;  
+  right:0;  
+  top:0;  
+  height:100%;  
+}  
+  
+/* TOP BAR */  
+.topbar{  
+  display:flex;  
+  gap:6px;  
+  margin-bottom:12px;  
+  position:sticky;  
+  top:0;  
+  background:#f2f2f2;  
+  z-index:10;  
+}  
+.topbar button{  
+  flex:1;  
+  padding:4px;  
+  font-size:12px;  
+  border:none;  
+  border-radius:6px;  
+  font-weight:600;  
+  cursor:pointer;  
+  transform:scaleX(0.5); /* สั้นลงครึ่งหนึ่ง */  
+}  
+  
+.btn-blue{background:#007bff;color:#fff}  
+.btn-purple{background:#6f42c1;color:#fff}  
+.btn-green{background:#28a745;color:#fff}  
+.btn-orange{background:#fd7e14;color:#fff}  
+  
+/* CARD */  
+.card{  
+  background:#fff;  
+  border-radius:10px;  
+  padding:12px;  
+  margin-bottom:12px;  
+  border-left:5px solid #ddd;  
+}  
+.card.active{  
+  border-left:5px solid #28a745;  
+  box-shadow:0 0 0 2px #28a74533;  
+}  
+  
+.group{  
+  border:2px dashed #bbb;  
+  padding:10px;  
+  border-radius:10px;  
+  margin-bottom:12px;  
+}  
+  
+h2{  
+  margin:0 0 6px 0;  
+  font-size:16px;  
+}  
+  
+select,input,textarea,button{  
+  width:100%;  
+  padding:8px;  
+  margin-top:6px;  
+  border-radius:6px;  
+  border:1px solid #ccc;  
+}  
+  
+.row{  
+  display:flex;  
+  gap:6px;  
+  margin-top:6px;  
+}  
+  
+.add{background:#28a745;color:#fff;border:none}  
+.del{  
+  background:#dc3545;  
+  color:#fff;  
+  border:none;  
+  flex:0.5; /* ปุ่มลบสั้นลงครึ่งหนึ่ง */  
+}  
+.copy{background:#6c757d;color:#fff;border:none}  
+  
+.output{  
+  height:85%;  
+  background:#000;  
+  color:#0f0;  
+  font-family:monospace;  
+}  
+</style>  </head>  <body>  
+<div class="container">  <!-- LEFT -->  <div class="left">    <!-- TOP BAR -->    <div class="topbar">  
+    <button class="btn-blue" onclick="modeImage();scrollToSection('sec-image')">🖼 ภาพ</button>  
+    <button class="btn-purple" onclick="modeWork();scrollToSection('sec-work')">🧩 งาน</button>  
+    <button class="btn-green" onclick="modeVoice();scrollToSection('sec-voice')">🎤 เสียง</button>  
+    <button class="btn-orange" onclick="modeSub();scrollToSection('sec-subtitle')">✍️ ซับ</button>  
+  </div>    <!-- PRESET -->    <div class="card">  
+    <h2>🎬 Preset Sora</h2>  
+    <select id="presetSora" onchange="loadPreset()"></select>  
+    <input id="presetName" placeholder="ชื่อ Preset">  
+    <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>  
+    <div class="row">  
+      <button class="add" onclick="savePreset()">💾 บันทึก</button>  
+      <button class="del" onclick="deletePreset()">🗑 ลบ</button>  
+    </div>  
+  </div>    <!-- MENU -->    <div id="menu"></div>  </div>  <!-- RIGHT -->  <div class="right">  
+  <h2>📄 Prompt ที่ได้</h2>  
+  <textarea id="result" class="output" readonly></textarea>  
+  <button class="copy" onclick="copyText()">📋 Copy</button>  
+</div>  </div>  <script>  
+const LS="PROMPT_BUILDER_DATA";  
+const LS_PRESET="SORA_PRESETS";  
+  
+const presetSora=document.getElementById("presetSora");  
+const presetName=document.getElementById("presetName");  
+const presetText=document.getElementById("presetText");  
+const result=document.getElementById("result");  
+  
+let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {  
+  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}  
+};  
+  
+function renderPresets(){  
+  presetSora.innerHTML="";  
+  Object.keys(soraPresets).forEach(k=>{  
+    const o=document.createElement("option");  
+    o.value=k;  
+    o.textContent=soraPresets[k].name;  
+    presetSora.appendChild(o);  
+  });  
+  loadPreset();  
+}  
+  
+function loadPreset(){  
+  const p=soraPresets[presetSora.value];  
+  if(!p) return;  
+  presetName.value=p.name;  
+  presetText.value=p.text;  
+  update();  
+}  
+  
+function savePreset(){  
+  if(!presetName.value) return alert("กรอกชื่อ Preset");  
+  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");  
+  soraPresets[k]={name:presetName.value,text:presetText.value};  
+  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));  
+  renderPresets();  
+  presetSora.value=k;  
+}  
+  
+function deletePreset(){  
+  if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;  
+  delete soraPresets[presetSora.value];  
+  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));  
+  renderPresets();  
+}  
+  
+let data=JSON.parse(localStorage.getItem(LS)) || {  
+  image:{enabled:false,items:["แต่งภาพ 9:16"]},  
+  product:{enabled:false,items:["ท็อปเปอร์"]},  
+  work:{enabled:false,items:["UGC รีวิว"]},  
+  model:{enabled:false,items:["นางแบบเอเชีย"]},  
+  style:{enabled:false,items:["Luxury"]},  
+  mood:{enabled:false,items:["อบอุ่น"]},  
+  voice:{enabled:false,items:["เสียงผู้หญิง"]},  
+  subtitle:{enabled:false,items:["ซับขาย"]}  
+};  
+  
+function save(){localStorage.setItem(LS,JSON.stringify(data));}  
+  
+function section(title,key){  
+  const c=data[key];  
+  if(!c.enabled) return ""; /* แสดงเฉพาะที่เปิดใช้งาน */  
+  return `  
+  <div class="card active" id="sec-${key}">  
+    <h2>  
+      <input type="checkbox" checked  
+      onchange="toggle('${key}',this.checked)"> ${title}  
+    </h2>  
+    <select id="${key}_s" onchange="update()">  
+      ${c.items.map(v=>`<option>${v}</option>`).join("")}  
+    </select>  
+    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">  
+    <div class="row">  
+      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>  
+      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>  
+    </div>  
+  </div>`;  
+}  
+  
+function render(){  
+  document.getElementById("menu").innerHTML=  
+    section("🖼 หมวดสร้างภาพ","image")+  
+    section("📦 หมวดสินค้า","product")+  
+    section("🧠 ประเภทงาน","work")+  
+    section("👤 นายแบบ / นางแบบ","model")+  
+    section("🎬 สไตล์ VDO","style")+  
+    section("🌤 บรรยากาศ","mood")+  
+    section("🎤 เสียงพากย์","voice")+  
+    section("✍️ สร้างซับไตเติล","subtitle");  
+  update();  
+}  
+  
+function toggle(k,v){  
+  data[k].enabled=v;  
+  save();  
+  render();  
+}  
+  
+function add(k){  
+  const i=document.getElementById(k+"_i");  
+  if(!i.value) return;  
+  data[k].items.push(i.value);  
+  i.value="";  
+  save();  
+  render();  
+}  
+  
+function delItem(k){  
+  const s=document.getElementById(k+"_s");  
+  if(!s || s.selectedIndex<0) return;  
+  const value=s.value;  
+  if(!confirm(`ยืนยันการลบ:\n"${value}" ?`)) return;  
+  data[k].items.splice(s.selectedIndex,1);  
+  save();  
+  render();  
+}  
+  
+function line(t,k){  
+  if(!data[k].enabled) return "";  
+  const s=document.getElementById(k+"_s");  
+  return s?`${t}: ${s.value}\n`:"";  
+}  
+  
+function update(){  
+  const p=soraPresets[presetSora.value];  
+  result.value=  
+`### PRESET SORA ###  
+${p?p.text:""}  
+  
+### DETAIL ###  
+${line("สร้างภาพ","image")}  
+${line("สินค้า","product")}  
+${line("ประเภทงาน","work")}  
+${line("นายแบบ","model")}  
+${line("สไตล์","style")}  
+${line("บรรยากาศ","mood")}  
+${line("เสียงพากย์","voice")}  
+${line("ซับ","subtitle")}`;  
+}  
+  
+function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}  
+function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}
+function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}  
+function modeVoice(){resetAll();["product","voice"].forEach(k=>data[k].enabled=true);save();render();}  
+function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}    
+  
+function copyText(){  
+  result.select();  
+  document.execCommand("copy");  
+}  
+  
+function scrollToSection(id){  
+  const el=document.getElementById(id);  
+  if(el) el.scrollIntoView({behavior:"smooth"});  
+}  
+  
+renderPresets();  
+render();  
+</script>  </body>  
+</html>  
