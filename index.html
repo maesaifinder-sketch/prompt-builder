@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Prompt Builder PRO+</title>
 
-<!-- PWA Manifest (INLINE) -->
 <link rel="manifest" href="data:application/manifest+json,{
   &quot;name&quot;:&quot;AI Prompt Builder PRO+&quot;,
   &quot;short_name&quot;:&quot;Prompt PRO&quot;,
@@ -24,16 +23,28 @@ body{margin:0;font-family:system-ui;background:#f2f2f2}
 
 .topbar{display:flex;gap:6px;margin-bottom:12px}
 .topbar button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-.btn-blue{background:#007bff;color:#fff}
-.btn-purple{background:#6f42c1;color:#fff}
-.btn-green{background:#28a745;color:#fff}
-.btn-orange{background:#fd7e14;color:#fff}
 
 .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border-left:5px solid #ddd}
 .group{border:2px dashed #bbb;padding:10px;border-radius:10px;margin-bottom:12px}
+
+/* 🔥 หมวดประเภทงาน (พื้นหลังมืดขึ้น) */
+.work-dark{
+  background:#2b2b2b;
+  color:#fff;
+  border-left:5px solid #6f42c1;
+}
+.work-dark select,
+.work-dark input,
+.work-dark textarea{
+  background:#111;
+  color:#0f0;
+  border:1px solid #444;
+}
+
 h2{margin:0 0 6px 0;font-size:16px}
 select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ccc}
 .row{display:flex;gap:6px;margin-top:6px}
+
 .add{background:#28a745;color:#fff;border:none}
 .del{background:#dc3545;color:#fff;border:none}
 .copy{background:#6c757d;color:#fff;border:none}
@@ -47,10 +58,10 @@ select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius
 
 <div class="left" id="left">
   <div class="topbar">
-    <button class="btn-blue" onclick="modeImage()">🖼 สร้างภาพ</button>
-    <button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
-    <button class="btn-green" onclick="modeVoice()">🎤 เสียงพากย์</button>
-    <button class="btn-orange" onclick="modeSub()">✍️ ซับไตเติล</button>
+    <button onclick="modeImage()">🖼 สร้างภาพ</button>
+    <button onclick="modeWork()">🧩 งาน</button>
+    <button onclick="modeVoice()">🎤 เสียงพากย์</button>
+    <button onclick="modeSub()">✍️ ซับไตเติล</button>
   </div>
 </div>
 
@@ -63,35 +74,38 @@ select,input,textarea,button{width:100%;padding:8px;margin-top:6px;border-radius
 </div>
 
 <script>
-/* =========================
-   SERVICE WORKER (INLINE)
-========================= */
+/* ================= SERVICE WORKER ================= */
 if ('serviceWorker' in navigator) {
   const sw = `
     self.addEventListener('install',e=>{
-      e.waitUntil(
-        caches.open('prompt-pro').then(c=>c.addAll(['./']))
-      );
+      e.waitUntil(caches.open('prompt-pro').then(c=>c.addAll(['./'])))
     });
     self.addEventListener('fetch',e=>{
-      e.respondWith(
-        caches.match(e.request).then(r=>r||fetch(e.request))
-      );
+      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))
     });
   `;
-  const blob=new Blob([sw],{type:'text/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob));
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw])));
 }
 
-/* =========================
-   APP LOGIC
-========================= */
+/* ================= DATA ================= */
 const LS="PROMPT_BUILDER_FINAL";
 
 let data=JSON.parse(localStorage.getItem(LS)) || {
   image:{enabled:false,items:["แต่งภาพสินค้า 9:16"]},
   product:{enabled:false,items:["ท็อปเปอร์"]},
   work:{enabled:false,items:["UGC รีวิว"]},
+
+  /* 🔥 Preset Sora */
+  sora:{
+    enabled:true,
+    items:[
+      "UGC vertical 9:16, handheld, real customer, 15s",
+      "Premium hotel bedroom, cinematic lighting",
+      "Clean product showcase, studio light",
+      "High-end commercial cinematic style"
+    ]
+  },
+
   model:{enabled:false,items:["นางแบบเอเชีย"]},
   style:{enabled:false,items:["Luxury"]},
   mood:{enabled:false,items:["อบอุ่น"]},
@@ -101,10 +115,11 @@ let data=JSON.parse(localStorage.getItem(LS)) || {
 
 function save(){localStorage.setItem(LS,JSON.stringify(data));}
 
-function section(title,key){
+/* ================= UI ================= */
+function section(title,key,extraClass=""){
   const c=data[key];
   return `
-  <div class="card">
+  <div class="card ${extraClass}">
     <h2>
       <input type="checkbox" ${c.enabled?"checked":""}
       onchange="toggle('${key}',this.checked)"> ${title}
@@ -123,20 +138,26 @@ function section(title,key){
 function render(){
   const l=document.getElementById("left");
   l.innerHTML=l.innerHTML.split("</div>")[0]+"</div>";
+
   l.innerHTML+=
     section("🖼 หมวดสร้างภาพ","image")+
     section("📦 หมวดสินค้า","product")+
+
     `<div class="group">
-      ${section("🧠 ประเภทงาน","work")}
+      ${section("🧠 ประเภทงาน","work","work-dark")}
+      ${section("🎬 Preset Sora","sora","work-dark")}
       ${section("👤 นายแบบ / นางแบบ","model")}
-      ${section("🎬 สไตล์ VDO","style")}
+      ${section("🎥 สไตล์ VDO","style")}
       ${section("🌤 บรรยากาศ","mood")}
     </div>`+
+
     section("🎤 เสียงพากย์","voice")+
-    section("✍️ สร้างซัพไตเติล","subtitle");
+    section("✍️ สร้างซับไตเติล","subtitle");
+
   update();
 }
 
+/* ================= LOGIC ================= */
 function toggle(k,v){data[k].enabled=v;save();update();}
 function add(k){
   const i=document.getElementById(k+"_i");
@@ -162,6 +183,7 @@ function update(){
     line("สร้างภาพ","image")+
     line("สินค้า","product")+
     line("ประเภทงาน","work")+
+    line("Preset Sora","sora")+
     line("นายแบบ/นางแบบ","model")+
     line("สไตล์ VDO","style")+
     line("บรรยากาศ","mood")+
@@ -170,16 +192,12 @@ function update(){
 }
 
 function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}
-
 function modeImage(){resetAll();data.image.enabled=true;save();render();}
-function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
+function modeWork(){resetAll();["product","work","sora","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
 function modeVoice(){resetAll();data.voice.enabled=true;save();render();}
 function modeSub(){resetAll();data.subtitle.enabled=true;save();render();}
 
-function copyText(){
-  result.select();
-  document.execCommand("copy");
-}
+function copyText(){result.select();document.execCommand("copy");}
 
 render();
 </script>
