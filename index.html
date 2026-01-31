@@ -43,16 +43,6 @@ body{
   background:#f2f2f2;  
   z-index:10;  
 }  
-.topbar button{  
-  flex:1;  
-  padding:4px;  
-  font-size:12px;  
-  border:none;  
-  border-radius:6px;  
-  font-weight:600;  
-  cursor:pointer;  
-  transform:scaleX(0.5); /* สั้นลงครึ่งหนึ่ง */  
-}  
   
 .btn-blue{background:#007bff;color:#fff}  
 .btn-purple{background:#6f42c1;color:#fff}  
@@ -103,22 +93,43 @@ select,input,textarea,button{
   background:#dc3545;  
   color:#fff;  
   border:none;  
-  flex:0.5; /* ปุ่มลบสั้นลงครึ่งหนึ่ง */  
+  flex:0.5;  
 }  
 .copy{background:#6c757d;color:#fff;border:none}  
   
+.auto{
+  background:#0d6efd;
+  color:#fff;
+  border:none;
+  margin-top:8px;
+  position:sticky;
+  bottom:10px;
+  z-index:20;
+}  
+  
 .output{  
-  height:85%;  
+  height:55%;  
   background:#000;  
   color:#0f0;  
   font-family:monospace;  
 }  
+  
+.log{  
+  margin-top:8px;  
+  background:#000;  
+  color:#0f0;  
+  font-size:12px;  
+  padding:6px;  
+  height:20%;  
+  overflow:auto;  
+  border-radius:6px;  
+}  
 </style>  </head>  <body>  
 <div class="container">  <!-- LEFT -->  <div class="left">    <!-- TOP BAR -->    <div class="topbar">  
-    <button class="btn-blue" onclick="modeImage();scrollToSection('sec-image')">🖼 ภาพ</button>  
-    <button class="btn-purple" onclick="modeWork();scrollToSection('sec-work')">🧩 งาน</button>  
-    <button class="btn-green" onclick="modeVoice();scrollToSection('sec-voice')">🎤 เสียง</button>  
-    <button class="btn-orange" onclick="modeSub();scrollToSection('sec-subtitle')">✍️ ซับ</button>  
+<button class="btn-blue" onclick="modeImage()">🖼 ภาพ</button>
+<button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
+<button class="btn-green" onclick="modeVoice()">🎤 เสียง</button>
+<button class="btn-orange" onclick="modeSub()">✍️ ซับ</button>  
   </div>    <!-- PRESET -->    <div class="card">  
     <h2>🎬 Preset Sora</h2>  
     <select id="presetSora" onchange="loadPreset()"></select>  
@@ -128,22 +139,159 @@ select,input,textarea,button{
       <button class="add" onclick="savePreset()">💾 บันทึก</button>  
       <button class="del" onclick="deletePreset()">🗑 ลบ</button>  
     </div>  
-  </div>    <!-- MENU -->    <div id="menu"></div>  </div>  <!-- RIGHT -->  <div class="right">  
-  <h2>📄 Prompt ที่ได้</h2>  
-  <textarea id="result" class="output" readonly></textarea>  
-  <button class="copy" onclick="copyText()">📋 Copy</button>  
+  </div>    <!-- MENU -->    
+<!-- PRESET VEO -->
+<div class="card">
+  <h2>🎬 Preset Veo</h2>
+  <select id="presetVeo" onchange="loadVeoPreset()"></select>
+  <input id="presetVeoName" placeholder="ชื่อ Preset Veo">
+  <textarea id="presetVeoText" rows="6" placeholder="รายละเอียด Preset Veo (motion / camera / ASMR)"></textarea>
+  <div class="row">
+    <button class="add" onclick="saveVeoPreset()">💾 บันทึก</button>
+    <button class="del" onclick="deleteVeoPreset()">🗑 ลบ</button>
+  </div>
+</div>
+<div id="menu"></div>  
+</div>  <!-- RIGHT -->  <div class="right">
+
+  <h2>📄 Sora Prompt</h2>
+  <textarea id="result" class="output" readonly></textarea>
+  <button class="copy" onclick="copyText()">📋 Copy (Sora Prompt)</button>
+
+  <hr style="margin:10px 0;border-color:#333">
+
+  <h2>🎬 Veo Prompt</h2>
+  <textarea id="veoPrompt" class="output" readonly></textarea>
+
+  <button class="auto" onclick="autoGenerate()">
+    🎬 Auto Generate (Veo via Flow)
+  </button>
+
+  <div class="log" id="log">
+    > Ready for Auto Generate Mode<br>
+  </div>
+
 </div>  </div>  <script>  
+    
+function getValue(key){
+  if(!data[key] || !data[key].enabled) return "";
+  const s = document.getElementById(key + "_s");
+  return s ? s.value : "";
+}
+
+function buildVeoPrompt(){
+  const product = getValue("product");
+  const work = getValue("work");
+  const model = getValue("model");
+  const style = getValue("style");
+  const mood = getValue("mood");
+  const voice = getValue("voice");
+
+  const veoPreset =
+  presetVeo && veoPresets[presetVeo.value]
+  ? veoPresets[presetVeo.value].text
+  : "";
+
+  return `
+${veoPreset}
+
+SUBJECT:
+${product || "A product"} in ${work || "UGC-style"} video.
+${model ? `Featuring ${model}.` : ""}
+
+SCENE:
+${style || "Clean"} environment with ${mood || "natural"} mood.
+
+AUDIO:
+${voice || "No voice specified"}
+
+QUALITY:
+Ultra realistic, cinematic lighting, smooth motion.
+`.trim();
+}
+  
 const LS="PROMPT_BUILDER_DATA";  
+const LS_VEO_PRESET = "VEO_PRESETS";
 const LS_PRESET="SORA_PRESETS";  
   
 const presetSora=document.getElementById("presetSora");  
 const presetName=document.getElementById("presetName");  
 const presetText=document.getElementById("presetText");  
 const result=document.getElementById("result");  
+const logBox=document.getElementById("log");  
+const veoBox=document.getElementById("veoPrompt");
+// ===== VEO PRESET VARIABLES (STEP 3) =====
+const presetVeo = document.getElementById("presetVeo");
+const presetVeoName = document.getElementById("presetVeoName");
+const presetVeoText = document.getElementById("presetVeoText");
+
+let veoPresets = JSON.parse(localStorage.getItem(LS_VEO_PRESET)) || {
+  ugc_motion:{
+    name:"UGC Motion Basic",
+    text:`FORMAT:
+Vertical 9:16 UGC-style video.
+
+CAMERA:
+Handheld smartphone feel, slow push-in.
+
+MOTION:
+Natural hand movement, soft fabric motion.
+
+LIGHTING:
+Soft natural lighting.
+
+DURATION:
+15 seconds, cinematic realism.`
+  }
+};
+
+// ===== VEO PRESET FUNCTIONS =====
+function renderVeoPresets(){
+  presetVeo.innerHTML = "";
+  Object.keys(veoPresets).forEach(k=>{
+    const o = document.createElement("option");
+    o.value = k;
+    o.textContent = veoPresets[k].name;
+    presetVeo.appendChild(o);
+  });
+  loadVeoPreset();
+}
+
+function loadVeoPreset(){
+  const p = veoPresets[presetVeo.value];
+  if(!p) return;
+  presetVeoName.value = p.name;
+  presetVeoText.value = p.text;
+  update();
+}
+
+function saveVeoPreset(){
+  if(!presetVeoName.value) return alert("กรอกชื่อ Preset Veo");
+  const k = presetVeoName.value.toLowerCase().replace(/\s+/g,"_");
+  veoPresets[k] = {
+    name: presetVeoName.value,
+    text: presetVeoText.value
+  };
+  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
+  renderVeoPresets();
+  presetVeo.value = k;
+}
+
+function deleteVeoPreset(){
+  if(!confirm("ยืนยันการลบ Preset Veo นี้ ?")) return;
+  delete veoPresets[presetVeo.value];
+  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
+  renderVeoPresets();
+}
   
 let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {  
   ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}  
 };  
+  
+function log(msg){  
+  logBox.innerHTML += `> ${msg}<br>`;  
+  logBox.scrollTop = logBox.scrollHeight;  
+}  
   
 function renderPresets(){  
   presetSora.innerHTML="";  
@@ -172,12 +320,12 @@ function savePreset(){
   renderPresets();  
   presetSora.value=k;  
 }  
-  
-function deletePreset(){  
-  if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;  
-  delete soraPresets[presetSora.value];  
-  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));  
-  renderPresets();  
+
+function deletePreset(){
+  if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;
+  delete soraPresets[presetSora.value];
+  localStorage.setItem(LS_PRESET, JSON.stringify(soraPresets));
+  renderPresets();
 }  
   
 let data=JSON.parse(localStorage.getItem(LS)) || {  
@@ -195,13 +343,10 @@ function save(){localStorage.setItem(LS,JSON.stringify(data));}
   
 function section(title,key){  
   const c=data[key];  
-  if(!c.enabled) return ""; /* แสดงเฉพาะที่เปิดใช้งาน */  
+  if(!c.enabled) return "";  
   return `  
   <div class="card active" id="sec-${key}">  
-    <h2>  
-      <input type="checkbox" checked  
-      onchange="toggle('${key}',this.checked)"> ${title}  
-    </h2>  
+    <h2>${title}</h2>  
     <select id="${key}_s" onchange="update()">  
       ${c.items.map(v=>`<option>${v}</option>`).join("")}  
     </select>  
@@ -243,9 +388,8 @@ function add(k){
   
 function delItem(k){  
   const s=document.getElementById(k+"_s");  
-  if(!s || s.selectedIndex<0) return;  
-  const value=s.value;  
-  if(!confirm(`ยืนยันการลบ:\n"${value}" ?`)) return;  
+  if(!s) return;  
+  if(!confirm(`ยืนยันการลบ "${s.value}" ?`)) return;  
   data[k].items.splice(s.selectedIndex,1);  
   save();  
   render();  
@@ -272,25 +416,59 @@ ${line("สไตล์","style")}
 ${line("บรรยากาศ","mood")}  
 ${line("เสียงพากย์","voice")}  
 ${line("ซับ","subtitle")}`;  
+veoBox.value = buildVeoPrompt();
 }  
   
 function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}  
-function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}
+function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}  
 function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}  
 function modeVoice(){resetAll();["product","voice"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}    
+function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}  
   
 function copyText(){  
   result.select();  
-  document.execCommand("copy");  
+  navigator.clipboard.writeText(result.value);  
+  log("Copy prompt for Sora สำเร็จ");  
 }  
   
-function scrollToSection(id){  
-  const el=document.getElementById(id);  
-  if(el) el.scrollIntoView({behavior:"smooth"});  
-}  
-  
-renderPresets();  
-render();  
+async function autoGenerate(){
+  const veoPrompt = buildVeoPrompt();
+  const logEl = document.getElementById("log");
+
+  if(!veoPrompt || typeof veoPrompt !== "string" || !veoPrompt.trim()){
+    logEl.innerHTML += "> ❌ Veo prompt is empty<br>";
+    return;
+  }
+
+  logEl.innerHTML += "> 🎬 Sending Veo Prompt...<br>";
+  logEl.innerHTML += "<pre style='color:#0f0'>" + veoPrompt + "</pre>";
+
+  try{
+    const res = await fetch("http://localhost:3000/api/generate-video",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        prompt: veoPrompt
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+      logEl.innerHTML += "> ✅ Veo Job Started<br>";
+      logEl.innerHTML += `> 🆔 Operation ID: ${data.operation}<br>`;
+    }else{
+      logEl.innerHTML += "> ❌ Veo API error<br>";
+    }
+
+  }catch(err){
+    logEl.innerHTML += "> ❌ Backend connection failed<br>";
+    console.error(err);
+  }
+}
+
+renderPresets();
+renderVeoPresets();
+render();
 </script>  </body>  
-</html>  
+</html>
