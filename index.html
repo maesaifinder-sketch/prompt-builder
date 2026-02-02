@@ -16,7 +16,6 @@ header{background:#020617;color:#fff;padding:20px}
 table{width:100%;border-collapse:collapse}
 th,td{padding:12px;border-bottom:1px solid #eee}
 th{background:#f8fafc}
-.rank{font-weight:900}
 .foi{font-size:22px;font-weight:900}
 button,input,select,textarea{
   padding:10px;border-radius:10px;border:1px solid #cbd5f5
@@ -62,13 +61,12 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 
 <br>
 
-<!-- CATEGORY MANAGER (COLLAPSE) -->
+<!-- CATEGORY -->
 <div class="card">
   <div class="flex">
     <h3>🗂 จัดการหมวดหมู่</h3>
     <button class="secondary" id="catToggle">➕</button>
   </div>
-
   <div id="catPanel" class="hidden">
     <br>
     <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
@@ -125,17 +123,15 @@ const DEFAULT_CATS=[
 let CATEGORIES=JSON.parse(localStorage.getItem(CAT_KEY))||DEFAULT_CATS;
 let DATA=[];
 
-/* ================= COLLAPSE LOGIC ================= */
+/* ================= COLLAPSE ================= */
 const catPanel=document.getElementById("catPanel");
 const catToggle=document.getElementById("catToggle");
-
 let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
 
 function renderCatUI(){
   catPanel.classList.toggle("hidden",!isCatOpen);
   catToggle.innerText=isCatOpen?"➖":"➕";
 }
-
 catToggle.onclick=()=>{
   isCatOpen=!isCatOpen;
   localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
@@ -148,20 +144,17 @@ function saveCat(){
   renderCatManager();
   reloadCategory();
 }
-
 function addCategory(){
   if(!catName.value||!catRegex.value) return alert("กรอกข้อมูลให้ครบ");
   CATEGORIES.unshift({name:catName.value,regex:catRegex.value});
   catName.value="";catRegex.value="";
   saveCat();
 }
-
 function removeCategory(i){
   if(!confirm("ลบหมวดนี้?")) return;
   CATEGORIES.splice(i,1);
   saveCat();
 }
-
 function renderCatManager(){
   catList.innerHTML="";
   CATEGORIES.forEach((c,i)=>{
@@ -195,8 +188,18 @@ async function load(){
   const json=await r.json();
   DATA=[];
   if(!json) return;
+
   Object.values(json).forEach(b=>{
     (b.items||[]).forEach(p=>{
+      /* 🔥 SELLER NORMALIZE (หัวใจของการแก้ปัญหา) */
+      p.shop =
+        p.shop ||
+        p.shop_name ||
+        p.seller_name ||
+        p.storeName ||
+        p.seller ||
+        "-";
+
       p.category=autoCategory(p.name,p.price);
       p.sell=sellScore(p);
       p.feed=feedScore(p);
@@ -212,7 +215,6 @@ async function load(){
 function reloadCategory(){
   dashboard();filterCat();render(DATA);buildGPT();
 }
-
 function dashboard(){
   total.innerText=DATA.length;
   easy.innerText=DATA.filter(p=>p.foi>=75).length;
@@ -220,24 +222,21 @@ function dashboard(){
   const c={};DATA.forEach(p=>c[p.category]=(c[p.category]||0)+1);
   topCat.innerText=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||"-";
 }
-
 function filterCat(){
   catFilter.innerHTML='<option value="">ทุกหมวด</option>';
   [...new Set(DATA.map(p=>p.category))].forEach(c=>catFilter.innerHTML+=`<option>${c}</option>`);
 }
-
 function apply(){
   const q=search.value.toLowerCase(),c=catFilter.value;
   render(DATA.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!c||p.category===c)));
 }
-
 function render(list){
   tb.innerHTML="";
   list.sort((a,b)=>b.foi-a.foi).forEach((p,i)=>{
     tb.innerHTML+=`
 <tr>
 <td>#${i+1}</td>
-<td>${p.name}<br><small>${p.shop||""}</small></td>
+<td>${p.name}<br><small>${p.shop}</small></td>
 <td><span class="badge">${p.category}</span></td>
 <td class="foi">${p.foi}</td>
 <td>${p.roi}</td>
@@ -250,7 +249,9 @@ function render(list){
 
 /* ================= GPT ================= */
 function buildGPT(){
-  gptPrompt.value=DATA.slice(0,10).map((p,i)=>`${i+1}. ${p.name} (${p.category}) FOI:${p.foi}`).join("\n");
+  gptPrompt.value=DATA.slice(0,10)
+    .map((p,i)=>`${i+1}. ${p.name} | ร้าน: ${p.shop} | FOI:${p.foi}`)
+    .join("\n");
 }
 function sendToGPT(){
   navigator.clipboard.writeText(gptPrompt.value);
@@ -265,7 +266,7 @@ async function clearData(){
 }
 
 /* ================= INIT ================= */
-renderCatUI();        // 🔒 ซ่อน/แสดงตามสถานะล่าสุด
+renderCatUI();
 renderCatManager();
 load();
 </script>
