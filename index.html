@@ -26,7 +26,19 @@ button.danger{background:#dc2626}
 textarea{width:100%;min-height:160px}
 small{color:#64748b}
 hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
-.hidden{display:none}
+
+/* ✅ SCROLL CATEGORY LIST */
+.cat-scroll{
+  max-height:260px;          /* ≈ 5 รายการ */
+  overflow-y:auto;
+  padding-right:4px;
+}
+.cat-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
 </style>
 </head>
 
@@ -60,26 +72,19 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 
 <br>
 
-<!-- CATEGORY (FIXED MOBILE SAFE) -->
+<!-- CATEGORY (SCROLL VERSION) -->
 <div class="card">
   <h3>🗂 จัดการหมวดหมู่</h3>
 
-  <button
-    class="secondary"
-    style="width:100%;margin:8px 0"
-    id="catToggle"
-    onclick="toggleCat()"
-  >
-    + แสดงเครื่องมือจัดการ
-  </button>
+  <!-- ADD CATEGORY -->
+  <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
+  <input id="catRegex" placeholder="Keyword / Regex เช่น topper|ท็อปเปอร์">
+  <button onclick="addCategory()">➕ เพิ่มหมวด</button>
 
-  <div id="catPanel" class="hidden">
-    <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
-    <input id="catRegex" placeholder="Keyword / Regex เช่น topper|ท็อปเปอร์">
-    <button onclick="addCategory()">➕ เพิ่มหมวด</button>
-    <hr>
-    <div id="catList"></div>
-  </div>
+  <hr>
+
+  <!-- CATEGORY LIST (SCROLL) -->
+  <div class="cat-scroll" id="catList"></div>
 </div>
 
 <br>
@@ -115,7 +120,6 @@ const IMPORT_PATH="/imports.json";
 
 /* ================= CATEGORY ================= */
 const CAT_KEY="INDEX_PRO_CATEGORIES";
-const CAT_UI_KEY="INDEX_PRO_CAT_OPEN";
 
 const DEFAULT_CATS=[
   {name:"Topper",regex:"topper|ท็อปเปอร์"},
@@ -127,24 +131,6 @@ const DEFAULT_CATS=[
 
 let CATEGORIES=JSON.parse(localStorage.getItem(CAT_KEY))||DEFAULT_CATS;
 let DATA=[];
-
-/* ================= CATEGORY TOGGLE (SAFE) ================= */
-const catPanel=document.getElementById("catPanel");
-const catToggle=document.getElementById("catToggle");
-let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
-
-function toggleCat(){
-  isCatOpen=!isCatOpen;
-  localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
-  renderCatUI();
-}
-
-function renderCatUI(){
-  catPanel.classList.toggle("hidden", !isCatOpen);
-  catToggle.innerText = isCatOpen
-    ? "− ซ่อนเครื่องมือจัดการ"
-    : "+ แสดงเครื่องมือจัดการ";
-}
 
 /* ================= CATEGORY CRUD ================= */
 function saveCat(){
@@ -167,7 +153,7 @@ function renderCatManager(){
   catList.innerHTML="";
   CATEGORIES.forEach((c,i)=>{
     catList.innerHTML+=`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div class="cat-item">
         <div><strong>${c.name}</strong> <small>(${c.regex})</small></div>
         <button class="danger" onclick="removeCategory(${i})">ลบ</button>
       </div>`;
@@ -266,7 +252,6 @@ async function clearData(){
 }
 
 /* ================= INIT ================= */
-renderCatUI();
 renderCatManager();
 load();
 </script>
