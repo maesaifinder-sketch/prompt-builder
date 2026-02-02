@@ -26,7 +26,6 @@ button.danger{background:#dc2626}
 textarea{width:100%;min-height:160px}
 small{color:#64748b}
 hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
-.flex{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .hidden{display:none}
 </style>
 </head>
@@ -61,17 +60,23 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 
 <br>
 
-<!-- CATEGORY -->
+<!-- CATEGORY (FIXED MOBILE SAFE) -->
 <div class="card">
-  <div class="flex">
-    <h3>🗂 จัดการหมวดหมู่</h3>
-    <button class="secondary" id="catToggle">+ จัดการ</button>
-  </div>
+  <h3>🗂 จัดการหมวดหมู่</h3>
+
+  <button
+    class="secondary"
+    style="width:100%;margin:8px 0"
+    id="catToggle"
+    onclick="toggleCat()"
+  >
+    + แสดงเครื่องมือจัดการ
+  </button>
+
   <div id="catPanel" class="hidden">
-    <br>
     <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
     <input id="catRegex" placeholder="Keyword / Regex เช่น topper|ท็อปเปอร์">
-    <button onclick="addCategory()">+ เพิ่มหมวด</button>
+    <button onclick="addCategory()">➕ เพิ่มหมวด</button>
     <hr>
     <div id="catList"></div>
   </div>
@@ -123,20 +128,23 @@ const DEFAULT_CATS=[
 let CATEGORIES=JSON.parse(localStorage.getItem(CAT_KEY))||DEFAULT_CATS;
 let DATA=[];
 
-/* ================= COLLAPSE ================= */
+/* ================= CATEGORY TOGGLE (SAFE) ================= */
 const catPanel=document.getElementById("catPanel");
 const catToggle=document.getElementById("catToggle");
 let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
 
-function renderCatUI(){
-  catPanel.classList.toggle("hidden", !isCatOpen);
-  catToggle.innerText = isCatOpen ? "− ซ่อน" : "+ จัดการ";
-}
-catToggle.onclick=()=>{
+function toggleCat(){
   isCatOpen=!isCatOpen;
   localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
   renderCatUI();
-};
+}
+
+function renderCatUI(){
+  catPanel.classList.toggle("hidden", !isCatOpen);
+  catToggle.innerText = isCatOpen
+    ? "− ซ่อนเครื่องมือจัดการ"
+    : "+ แสดงเครื่องมือจัดการ";
+}
 
 /* ================= CATEGORY CRUD ================= */
 function saveCat(){
@@ -159,7 +167,7 @@ function renderCatManager(){
   catList.innerHTML="";
   CATEGORIES.forEach((c,i)=>{
     catList.innerHTML+=`
-      <div class="flex">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div><strong>${c.name}</strong> <small>(${c.regex})</small></div>
         <button class="danger" onclick="removeCategory(${i})">ลบ</button>
       </div>`;
@@ -191,15 +199,7 @@ async function load(){
 
   Object.values(json).forEach(b=>{
     (b.items||[]).forEach(p=>{
-      /* 🔥 SELLER NORMALIZE (หัวใจของการแก้ปัญหา) */
-      p.shop =
-        p.shop ||
-        p.shop_name ||
-        p.seller_name ||
-        p.storeName ||
-        p.seller ||
-        "-";
-
+      p.shop = p.shop || p.shop_name || p.seller_name || p.storeName || p.seller || "-";
       p.category=autoCategory(p.name,p.price);
       p.sell=sellScore(p);
       p.feed=feedScore(p);
