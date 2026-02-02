@@ -65,7 +65,7 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 <div class="card">
   <div class="flex">
     <h3>🗂 จัดการหมวดหมู่</h3>
-    <button class="secondary" id="catToggle">➕</button>
+    <button class="secondary" id="catToggle">+ จัดการ</button>
   </div>
   <div id="catPanel" class="hidden">
     <br>
@@ -129,8 +129,8 @@ const catToggle=document.getElementById("catToggle");
 let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
 
 function renderCatUI(){
-  catPanel.classList.toggle("hidden",!isCatOpen);
-  catToggle.innerText=isCatOpen?"➖":"➕";
+  catPanel.classList.toggle("hidden", !isCatOpen);
+  catToggle.innerText = isCatOpen ? "− ซ่อน" : "+ จัดการ";
 }
 catToggle.onclick=()=>{
   isCatOpen=!isCatOpen;
