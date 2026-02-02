@@ -17,8 +17,12 @@ table{width:100%;border-collapse:collapse}
 th,td{padding:12px;border-bottom:1px solid #eee}
 th{background:#f8fafc}
 .foi{font-size:22px;font-weight:900}
+
 button,input,select,textarea{
-  padding:10px;border-radius:10px;border:1px solid #cbd5f5
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #cbd5f5;
+  font-family:inherit;
 }
 button{background:#020617;color:#fff;cursor:pointer}
 button.secondary{background:#475569}
@@ -27,12 +31,24 @@ textarea{width:100%;min-height:160px}
 small{color:#64748b}
 hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 
-/* ✅ SCROLL CATEGORY LIST */
+/* ================= CATEGORY SCROLL (UPDATED) ================= */
 .cat-scroll{
-  max-height:260px;          /* ≈ 5 รายการ */
+  max-height:260px;              /* แสดง ~5-6 รายการ */
   overflow-y:auto;
-  padding-right:4px;
+  padding-right:6px;
+  -webkit-overflow-scrolling:touch; /* mobile smooth */
+  border-top:1px dashed #e5e7eb;
 }
+
+/* scrollbar style (desktop) */
+.cat-scroll::-webkit-scrollbar{
+  width:6px;
+}
+.cat-scroll::-webkit-scrollbar-thumb{
+  background:#c7d2fe;
+  border-radius:10px;
+}
+
 .cat-item{
   display:flex;
   justify-content:space-between;
@@ -72,19 +88,18 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 
 <br>
 
-<!-- CATEGORY (SCROLL VERSION) -->
+<!-- CATEGORY -->
 <div class="card">
   <h3>🗂 จัดการหมวดหมู่</h3>
 
-  <!-- ADD CATEGORY -->
   <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
   <input id="catRegex" placeholder="Keyword / Regex เช่น topper|ท็อปเปอร์">
   <button onclick="addCategory()">➕ เพิ่มหมวด</button>
 
   <hr>
 
-  <!-- CATEGORY LIST (SCROLL) -->
-  <div class="cat-scroll" id="catList"></div>
+  <!-- ✅ SCROLLABLE LIST -->
+  <div id="catList" class="cat-scroll"></div>
 </div>
 
 <br>
@@ -120,7 +135,6 @@ const IMPORT_PATH="/imports.json";
 
 /* ================= CATEGORY ================= */
 const CAT_KEY="INDEX_PRO_CATEGORIES";
-
 const DEFAULT_CATS=[
   {name:"Topper",regex:"topper|ท็อปเปอร์"},
   {name:"ผ้าปูที่นอน",regex:"ผ้าปู|bed sheet"},
@@ -154,7 +168,7 @@ function renderCatManager(){
   CATEGORIES.forEach((c,i)=>{
     catList.innerHTML+=`
       <div class="cat-item">
-        <div><strong>${c.name}</strong> <small>(${c.regex})</small></div>
+        <div><strong>${c.name}</strong><br><small>${c.regex}</small></div>
         <button class="danger" onclick="removeCategory(${i})">ลบ</button>
       </div>`;
   });
@@ -185,7 +199,7 @@ async function load(){
 
   Object.values(json).forEach(b=>{
     (b.items||[]).forEach(p=>{
-      p.shop = p.shop || p.shop_name || p.seller_name || p.storeName || p.seller || "-";
+      p.shop=p.shop||p.shop_name||p.seller_name||"-";
       p.category=autoCategory(p.name,p.price);
       p.sell=sellScore(p);
       p.feed=feedScore(p);
@@ -236,7 +250,7 @@ function render(list){
 /* ================= GPT ================= */
 function buildGPT(){
   gptPrompt.value=DATA.slice(0,10)
-    .map((p,i)=>`${i+1}. ${p.name} | ร้าน: ${p.shop} | FOI:${p.foi}`)
+    .map((p,i)=>`${i+1}. ${p.name} | ร้าน:${p.shop} | FOI:${p.foi}`)
     .join("\n");
 }
 function sendToGPT(){
