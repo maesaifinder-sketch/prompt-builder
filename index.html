@@ -56,7 +56,7 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
   <input id="search" placeholder="ค้นหาสินค้า">
   <select id="catFilter"></select>
   <button onclick="apply()">Filter</button>
-  <button class="secondary" onclick="exportCSV()">Export CSV</button>
+  <button class="secondary" onclick="exportCSV?.()">Export CSV</button>
   <button class="danger" onclick="clearData()">🧹 เคลียร์ข้อมูล</button>
 </div>
 
@@ -66,7 +66,7 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 <div class="card">
   <div class="flex">
     <h3>🗂 จัดการหมวดหมู่</h3>
-    <button class="secondary" onclick="toggleCat()" id="catToggle">➕</button>
+    <button class="secondary" id="catToggle">➕</button>
   </div>
 
   <div id="catPanel" class="hidden">
@@ -106,11 +106,11 @@ hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
 </div>
 
 <script>
-/* ================= FIREBASE ================= */
+/* ================= CONFIG ================= */
 const DB_ROOT="https://index-pro-tiktok-default-rtdb.asia-southeast1.firebasedatabase.app";
 const IMPORT_PATH="/imports.json";
 
-/* ================= CATEGORY STORE ================= */
+/* ================= CATEGORY ================= */
 const CAT_KEY="INDEX_PRO_CATEGORIES";
 const CAT_UI_KEY="INDEX_PRO_CAT_OPEN";
 
@@ -125,21 +125,24 @@ const DEFAULT_CATS=[
 let CATEGORIES=JSON.parse(localStorage.getItem(CAT_KEY))||DEFAULT_CATS;
 let DATA=[];
 
-/* ================= CATEGORY UI ================= */
-let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
+/* ================= COLLAPSE LOGIC ================= */
+const catPanel=document.getElementById("catPanel");
+const catToggle=document.getElementById("catToggle");
 
-function toggleCat(){
-  isCatOpen=!isCatOpen;
-  localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
-  renderCatUI();
-}
+let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
 
 function renderCatUI(){
   catPanel.classList.toggle("hidden",!isCatOpen);
-  catToggle.innerText = isCatOpen ? "➖" : "➕";
+  catToggle.innerText=isCatOpen?"➖":"➕";
 }
 
-/* ================= CATEGORY LOGIC ================= */
+catToggle.onclick=()=>{
+  isCatOpen=!isCatOpen;
+  localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
+  renderCatUI();
+};
+
+/* ================= CATEGORY CRUD ================= */
 function saveCat(){
   localStorage.setItem(CAT_KEY,JSON.stringify(CATEGORIES));
   renderCatManager();
@@ -147,7 +150,7 @@ function saveCat(){
 }
 
 function addCategory(){
-  if(!catName.value||!catRegex.value) return alert("กรอกให้ครบ");
+  if(!catName.value||!catRegex.value) return alert("กรอกข้อมูลให้ครบ");
   CATEGORIES.unshift({name:catName.value,regex:catRegex.value});
   catName.value="";catRegex.value="";
   saveCat();
@@ -163,14 +166,14 @@ function renderCatManager(){
   catList.innerHTML="";
   CATEGORIES.forEach((c,i)=>{
     catList.innerHTML+=`
-    <div>
-      <strong>${c.name}</strong>
-      <small>(${c.regex})</small>
-      <button class="danger" onclick="removeCategory(${i})">ลบ</button>
-    </div>`;
+      <div class="flex">
+        <div><strong>${c.name}</strong> <small>(${c.regex})</small></div>
+        <button class="danger" onclick="removeCategory(${i})">ลบ</button>
+      </div>`;
   });
 }
 
+/* ================= CATEGORY AUTO ================= */
 function autoCategory(name="",price=0){
   name=name.toLowerCase();
   for(const c of CATEGORIES){
@@ -261,7 +264,8 @@ async function clearData(){
   DATA=[];reloadCategory();
 }
 
-renderCatUI();
+/* ================= INIT ================= */
+renderCatUI();        // 🔒 ซ่อน/แสดงตามสถานะล่าสุด
 renderCatManager();
 load();
 </script>
