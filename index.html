@@ -1,474 +1,270 @@
-<!DOCTYPE html>  <html lang="th">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>AI Prompt Builder PRO+</title>  <style>  
-body{  
-  margin:0;  
-  font-family:system-ui;  
-  background:#f2f2f2;  
-}  
-.container{  
-  display:flex;  
-  height:100vh;  
-}  
-  
-/* LEFT */  
-.left{  
-  width:70%;  
-  padding:12px;  
-  margin-right:30%;  
-  overflow:auto;  
-}  
-  
-/* RIGHT */  
-.right{  
-  width:30%;  
-  background:#111;  
-  color:#0f0;  
-  padding:12px;  
-  position:fixed;  
-  right:0;  
-  top:0;  
-  height:100%;  
-}  
-  
-/* TOP BAR */  
-.topbar{  
-  display:flex;  
-  gap:6px;  
-  margin-bottom:12px;  
-  position:sticky;  
-  top:0;  
-  background:#f2f2f2;  
-  z-index:10;  
-}  
-  
-.btn-blue{background:#007bff;color:#fff}  
-.btn-purple{background:#6f42c1;color:#fff}  
-.btn-green{background:#28a745;color:#fff}  
-.btn-orange{background:#fd7e14;color:#fff}  
-  
-/* CARD */  
-.card{  
-  background:#fff;  
-  border-radius:10px;  
-  padding:12px;  
-  margin-bottom:12px;  
-  border-left:5px solid #ddd;  
-}  
-.card.active{  
-  border-left:5px solid #28a745;  
-  box-shadow:0 0 0 2px #28a74533;  
-}  
-  
-.group{  
-  border:2px dashed #bbb;  
-  padding:10px;  
-  border-radius:10px;  
-  margin-bottom:12px;  
-}  
-  
-h2{  
-  margin:0 0 6px 0;  
-  font-size:16px;  
-}  
-  
-select,input,textarea,button{  
-  width:100%;  
-  padding:8px;  
-  margin-top:6px;  
-  border-radius:6px;  
-  border:1px solid #ccc;  
-}  
-  
-.row{  
-  display:flex;  
-  gap:6px;  
-  margin-top:6px;  
-}  
-  
-.add{background:#28a745;color:#fff;border:none}  
-.del{  
-  background:#dc3545;  
-  color:#fff;  
-  border:none;  
-  flex:0.5;  
-}  
-.copy{background:#6c757d;color:#fff;border:none}  
-  
-.auto{
-  background:#0d6efd;
-  color:#fff;
-  border:none;
-  margin-top:8px;
-  position:sticky;
-  bottom:10px;
-  z-index:20;
-}  
-  
-.output{  
-  height:55%;  
-  background:#000;  
-  color:#0f0;  
-  font-family:monospace;  
-}  
-  
-.log{  
-  margin-top:8px;  
-  background:#000;  
-  color:#0f0;  
-  font-size:12px;  
-  padding:6px;  
-  height:20%;  
-  overflow:auto;  
-  border-radius:6px;  
-}  
-</style>  </head>  <body>  
-<div class="container">  <!-- LEFT -->  <div class="left">    <!-- TOP BAR -->    <div class="topbar">  
-<button class="btn-blue" onclick="modeImage()">🖼 ภาพ</button>
-<button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
-<button class="btn-green" onclick="modeVoice()">🎤 เสียง</button>
-<button class="btn-orange" onclick="modeSub()">✍️ ซับ</button>  
-  </div>    <!-- PRESET -->    <div class="card">  
-    <h2>🎬 Preset Sora</h2>  
-    <select id="presetSora" onchange="loadPreset()"></select>  
-    <input id="presetName" placeholder="ชื่อ Preset">  
-    <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>  
-    <div class="row">  
-      <button class="add" onclick="savePreset()">💾 บันทึก</button>  
-      <button class="del" onclick="deletePreset()">🗑 ลบ</button>  
-    </div>  
-  </div>    <!-- MENU -->    
-<!-- PRESET VEO -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Index PRO+ – TikTok Feed Intelligence</title>
+
+<style>
+body{margin:0;font-family:system-ui;background:#f1f5f9}
+header{background:#020617;color:#fff;padding:20px}
+.container{max-width:1500px;margin:auto;padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.stat{font-size:30px;font-weight:900}
+.badge{padding:4px 10px;border-radius:20px;font-size:12px;background:#e5e7eb}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px;border-bottom:1px solid #eee}
+th{background:#f8fafc}
+.rank{font-weight:900}
+.foi{font-size:22px;font-weight:900}
+button,input,select,textarea{
+  padding:10px;border-radius:10px;border:1px solid #cbd5f5
+}
+button{background:#020617;color:#fff;cursor:pointer}
+button.secondary{background:#475569}
+button.danger{background:#dc2626}
+textarea{width:100%;min-height:160px}
+small{color:#64748b}
+hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
+.flex{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🚀 Index PRO+ – Feed Opportunity Index</h1>
+  <small>Kalodata-style | Affiliate Intelligence | No API</small>
+</header>
+
+<div class="container">
+
+<!-- DASHBOARD -->
+<div class="grid">
+  <div class="card"><h3>📦 สินค้าทั้งหมด</h3><div class="stat" id="total">0</div></div>
+  <div class="card"><h3>🚀 FOI ≥ 75</h3><div class="stat" id="easy">0</div></div>
+  <div class="card"><h3>💰 ROI สูง</h3><div class="stat" id="roiHigh">0</div></div>
+  <div class="card"><h3>🔥 หมวดมาแรง</h3><div class="stat" id="topCat">-</div></div>
+</div>
+
+<br>
+
+<!-- FILTER -->
 <div class="card">
-  <h2>🎬 Preset Veo</h2>
-  <select id="presetVeo" onchange="loadVeoPreset()"></select>
-  <input id="presetVeoName" placeholder="ชื่อ Preset Veo">
-  <textarea id="presetVeoText" rows="6" placeholder="รายละเอียด Preset Veo (motion / camera / ASMR)"></textarea>
-  <div class="row">
-    <button class="add" onclick="saveVeoPreset()">💾 บันทึก</button>
-    <button class="del" onclick="deleteVeoPreset()">🗑 ลบ</button>
+  <input id="search" placeholder="ค้นหาสินค้า">
+  <select id="catFilter"></select>
+  <button onclick="apply()">Filter</button>
+  <button class="secondary" onclick="exportCSV()">Export CSV</button>
+  <button class="danger" onclick="clearData()">🧹 เคลียร์ข้อมูล</button>
+</div>
+
+<br>
+
+<!-- CATEGORY MANAGER (COLLAPSE) -->
+<div class="card">
+  <div class="flex">
+    <h3>🗂 จัดการหมวดหมู่</h3>
+    <button class="secondary" onclick="toggleCat()" id="catToggle">➕</button>
+  </div>
+
+  <div id="catPanel" class="hidden">
+    <br>
+    <input id="catName" placeholder="ชื่อหมวด เช่น Topper Premium">
+    <input id="catRegex" placeholder="Keyword / Regex เช่น topper|ท็อปเปอร์">
+    <button onclick="addCategory()">➕ เพิ่มหมวด</button>
+    <hr>
+    <div id="catList"></div>
   </div>
 </div>
-<div id="menu"></div>  
-</div>  <!-- RIGHT -->  <div class="right">
 
-  <h2>📄 Sora Prompt</h2>
-  <textarea id="result" class="output" readonly></textarea>
-  <button class="copy" onclick="copyText()">📋 Copy (Sora Prompt)</button>
+<br>
 
-  <hr style="margin:10px 0;border-color:#333">
+<!-- TABLE -->
+<div class="card">
+<table>
+<thead>
+<tr>
+<th>#</th><th>สินค้า</th><th>หมวด</th>
+<th>FOI</th><th>ROI</th><th>Sell</th><th>Feed</th><th>สถานะ</th>
+</tr>
+</thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
 
-  <h2>🎬 Veo Prompt</h2>
-  <textarea id="veoPrompt" class="output" readonly></textarea>
+<br>
 
-  <button class="auto" onclick="autoGenerate()">
-    🎬 Auto Generate (Veo via Flow)
-  </button>
+<!-- GPT -->
+<div class="card">
+  <h3>🧠 Send to GPT</h3>
+  <textarea id="gptPrompt"></textarea>
+  <button onclick="sendToGPT()">📤 Copy & Open ChatGPT</button>
+</div>
 
-  <div class="log" id="log">
-    > Ready for Auto Generate Mode<br>
-  </div>
+</div>
 
-</div>  </div>  <script>  
-    
-function getValue(key){
-  if(!data[key] || !data[key].enabled) return "";
-  const s = document.getElementById(key + "_s");
-  return s ? s.value : "";
+<script>
+/* ================= FIREBASE ================= */
+const DB_ROOT="https://index-pro-tiktok-default-rtdb.asia-southeast1.firebasedatabase.app";
+const IMPORT_PATH="/imports.json";
+
+/* ================= CATEGORY STORE ================= */
+const CAT_KEY="INDEX_PRO_CATEGORIES";
+const CAT_UI_KEY="INDEX_PRO_CAT_OPEN";
+
+const DEFAULT_CATS=[
+  {name:"Topper",regex:"topper|ท็อปเปอร์"},
+  {name:"ผ้าปูที่นอน",regex:"ผ้าปู|bed sheet"},
+  {name:"หมอน",regex:"หมอน|pillow"},
+  {name:"ผ้าห่ม",regex:"ผ้าห่ม|blanket"},
+  {name:"Premium Bedding",regex:"premium"}
+];
+
+let CATEGORIES=JSON.parse(localStorage.getItem(CAT_KEY))||DEFAULT_CATS;
+let DATA=[];
+
+/* ================= CATEGORY UI ================= */
+let isCatOpen = localStorage.getItem(CAT_UI_KEY)==="1";
+
+function toggleCat(){
+  isCatOpen=!isCatOpen;
+  localStorage.setItem(CAT_UI_KEY,isCatOpen?"1":"0");
+  renderCatUI();
 }
 
-function buildVeoPrompt(){
-  const product = getValue("product");
-  const work = getValue("work");
-  const model = getValue("model");
-  const style = getValue("style");
-  const mood = getValue("mood");
-  const voice = getValue("voice");
-
-  const veoPreset =
-  presetVeo && veoPresets[presetVeo.value]
-  ? veoPresets[presetVeo.value].text
-  : "";
-
-  return `
-${veoPreset}
-
-SUBJECT:
-${product || "A product"} in ${work || "UGC-style"} video.
-${model ? `Featuring ${model}.` : ""}
-
-SCENE:
-${style || "Clean"} environment with ${mood || "natural"} mood.
-
-AUDIO:
-${voice || "No voice specified"}
-
-QUALITY:
-Ultra realistic, cinematic lighting, smooth motion.
-`.trim();
+function renderCatUI(){
+  catPanel.classList.toggle("hidden",!isCatOpen);
+  catToggle.innerText = isCatOpen ? "➖" : "➕";
 }
-  
-const LS="PROMPT_BUILDER_DATA";  
-const LS_VEO_PRESET = "VEO_PRESETS";
-const LS_PRESET="SORA_PRESETS";  
-  
-const presetSora=document.getElementById("presetSora");  
-const presetName=document.getElementById("presetName");  
-const presetText=document.getElementById("presetText");  
-const result=document.getElementById("result");  
-const logBox=document.getElementById("log");  
-const veoBox=document.getElementById("veoPrompt");
-// ===== VEO PRESET VARIABLES (STEP 3) =====
-const presetVeo = document.getElementById("presetVeo");
-const presetVeoName = document.getElementById("presetVeoName");
-const presetVeoText = document.getElementById("presetVeoText");
 
-let veoPresets = JSON.parse(localStorage.getItem(LS_VEO_PRESET)) || {
-  ugc_motion:{
-    name:"UGC Motion Basic",
-    text:`FORMAT:
-Vertical 9:16 UGC-style video.
+/* ================= CATEGORY LOGIC ================= */
+function saveCat(){
+  localStorage.setItem(CAT_KEY,JSON.stringify(CATEGORIES));
+  renderCatManager();
+  reloadCategory();
+}
 
-CAMERA:
-Handheld smartphone feel, slow push-in.
+function addCategory(){
+  if(!catName.value||!catRegex.value) return alert("กรอกให้ครบ");
+  CATEGORIES.unshift({name:catName.value,regex:catRegex.value});
+  catName.value="";catRegex.value="";
+  saveCat();
+}
 
-MOTION:
-Natural hand movement, soft fabric motion.
+function removeCategory(i){
+  if(!confirm("ลบหมวดนี้?")) return;
+  CATEGORIES.splice(i,1);
+  saveCat();
+}
 
-LIGHTING:
-Soft natural lighting.
-
-DURATION:
-15 seconds, cinematic realism.`
-  }
-};
-
-// ===== VEO PRESET FUNCTIONS =====
-function renderVeoPresets(){
-  presetVeo.innerHTML = "";
-  Object.keys(veoPresets).forEach(k=>{
-    const o = document.createElement("option");
-    o.value = k;
-    o.textContent = veoPresets[k].name;
-    presetVeo.appendChild(o);
+function renderCatManager(){
+  catList.innerHTML="";
+  CATEGORIES.forEach((c,i)=>{
+    catList.innerHTML+=`
+    <div>
+      <strong>${c.name}</strong>
+      <small>(${c.regex})</small>
+      <button class="danger" onclick="removeCategory(${i})">ลบ</button>
+    </div>`;
   });
-  loadVeoPreset();
 }
 
-function loadVeoPreset(){
-  const p = veoPresets[presetVeo.value];
-  if(!p) return;
-  presetVeoName.value = p.name;
-  presetVeoText.value = p.text;
-  update();
-}
-
-function saveVeoPreset(){
-  if(!presetVeoName.value) return alert("กรอกชื่อ Preset Veo");
-  const k = presetVeoName.value.toLowerCase().replace(/\s+/g,"_");
-  veoPresets[k] = {
-    name: presetVeoName.value,
-    text: presetVeoText.value
-  };
-  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
-  renderVeoPresets();
-  presetVeo.value = k;
-}
-
-function deleteVeoPreset(){
-  if(!confirm("ยืนยันการลบ Preset Veo นี้ ?")) return;
-  delete veoPresets[presetVeo.value];
-  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
-  renderVeoPresets();
-}
-  
-let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {  
-  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}  
-};  
-  
-function log(msg){  
-  logBox.innerHTML += `> ${msg}<br>`;  
-  logBox.scrollTop = logBox.scrollHeight;  
-}  
-  
-function renderPresets(){  
-  presetSora.innerHTML="";  
-  Object.keys(soraPresets).forEach(k=>{  
-    const o=document.createElement("option");  
-    o.value=k;  
-    o.textContent=soraPresets[k].name;  
-    presetSora.appendChild(o);  
-  });  
-  loadPreset();  
-}  
-  
-function loadPreset(){  
-  const p=soraPresets[presetSora.value];  
-  if(!p) return;  
-  presetName.value=p.name;  
-  presetText.value=p.text;  
-  update();  
-}  
-  
-function savePreset(){  
-  if(!presetName.value) return alert("กรอกชื่อ Preset");  
-  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");  
-  soraPresets[k]={name:presetName.value,text:presetText.value};  
-  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));  
-  renderPresets();  
-  presetSora.value=k;  
-}  
-
-function deletePreset(){
-  if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;
-  delete soraPresets[presetSora.value];
-  localStorage.setItem(LS_PRESET, JSON.stringify(soraPresets));
-  renderPresets();
-}  
-  
-let data=JSON.parse(localStorage.getItem(LS)) || {  
-  image:{enabled:false,items:["แต่งภาพ 9:16"]},  
-  product:{enabled:false,items:["ท็อปเปอร์"]},  
-  work:{enabled:false,items:["UGC รีวิว"]},  
-  model:{enabled:false,items:["นางแบบเอเชีย"]},  
-  style:{enabled:false,items:["Luxury"]},  
-  mood:{enabled:false,items:["อบอุ่น"]},  
-  voice:{enabled:false,items:["เสียงผู้หญิง"]},  
-  subtitle:{enabled:false,items:["ซับขาย"]}  
-};  
-  
-function save(){localStorage.setItem(LS,JSON.stringify(data));}  
-  
-function section(title,key){  
-  const c=data[key];  
-  if(!c.enabled) return "";  
-  return `  
-  <div class="card active" id="sec-${key}">  
-    <h2>${title}</h2>  
-    <select id="${key}_s" onchange="update()">  
-      ${c.items.map(v=>`<option>${v}</option>`).join("")}  
-    </select>  
-    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">  
-    <div class="row">  
-      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>  
-      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>  
-    </div>  
-  </div>`;  
-}  
-  
-function render(){  
-  document.getElementById("menu").innerHTML=  
-    section("🖼 หมวดสร้างภาพ","image")+  
-    section("📦 หมวดสินค้า","product")+  
-    section("🧠 ประเภทงาน","work")+  
-    section("👤 นายแบบ / นางแบบ","model")+  
-    section("🎬 สไตล์ VDO","style")+  
-    section("🌤 บรรยากาศ","mood")+  
-    section("🎤 เสียงพากย์","voice")+  
-    section("✍️ สร้างซับไตเติล","subtitle");  
-  update();  
-}  
-  
-function toggle(k,v){  
-  data[k].enabled=v;  
-  save();  
-  render();  
-}  
-  
-function add(k){  
-  const i=document.getElementById(k+"_i");  
-  if(!i.value) return;  
-  data[k].items.push(i.value);  
-  i.value="";  
-  save();  
-  render();  
-}  
-  
-function delItem(k){  
-  const s=document.getElementById(k+"_s");  
-  if(!s) return;  
-  if(!confirm(`ยืนยันการลบ "${s.value}" ?`)) return;  
-  data[k].items.splice(s.selectedIndex,1);  
-  save();  
-  render();  
-}  
-  
-function line(t,k){  
-  if(!data[k].enabled) return "";  
-  const s=document.getElementById(k+"_s");  
-  return s?`${t}: ${s.value}\n`:"";  
-}  
-  
-function update(){  
-  const p=soraPresets[presetSora.value];  
-  result.value=  
-`### PRESET SORA ###  
-${p?p.text:""}  
-  
-### DETAIL ###  
-${line("สร้างภาพ","image")}  
-${line("สินค้า","product")}  
-${line("ประเภทงาน","work")}  
-${line("นายแบบ/นางแบบ","model")}  
-${line("สไตล์","style")}  
-${line("บรรยากาศ","mood")}  
-${line("เสียงพากย์","voice")}  
-${line("ซับ","subtitle")}`;  
-veoBox.value = buildVeoPrompt();
-}  
-  
-function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}  
-function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeVoice(){resetAll();["product","voice"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}  
-  
-function copyText(){  
-  result.select();  
-  navigator.clipboard.writeText(result.value);  
-  log("Copy prompt for Sora สำเร็จ");  
-}  
-  
-async function autoGenerate(){
-  const veoPrompt = buildVeoPrompt();
-  const logEl = document.getElementById("log");
-
-  if(!veoPrompt || typeof veoPrompt !== "string" || !veoPrompt.trim()){
-    logEl.innerHTML += "> ❌ Veo prompt is empty<br>";
-    return;
+function autoCategory(name="",price=0){
+  name=name.toLowerCase();
+  for(const c of CATEGORIES){
+    if(new RegExp(c.regex,"i").test(name)) return c.name;
   }
+  if(price>1000) return "Premium Bedding";
+  return "Home & Sleep";
+}
 
-  logEl.innerHTML += "> 🎬 Sending Veo Prompt...<br>";
-  logEl.innerHTML += "<pre style='color:#0f0'>" + veoPrompt + "</pre>";
+/* ================= SCORE ================= */
+const sellScore=p=>Math.round(Math.min((p.avgViews||0)/1200,30)+Math.min((p.engagement||0)*4,30));
+const feedScore=p=>Math.round(Math.min((p.avgViews||0)/1000,30)+Math.min((p.engagement||0)*5,25));
+const FOI=p=>Math.round(sellScore(p)*0.4+feedScore(p)*0.6);
+const roiScore=p=>Math.round(p.foi*0.6+(p.engagement||0.1)*20);
 
-  try{
-    const res = await fetch("http://localhost:3000/api/generate-video",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        prompt: veoPrompt
-      })
+/* ================= LOAD ================= */
+async function load(){
+  const r=await fetch(DB_ROOT+IMPORT_PATH);
+  const json=await r.json();
+  DATA=[];
+  if(!json) return;
+  Object.values(json).forEach(b=>{
+    (b.items||[]).forEach(p=>{
+      p.category=autoCategory(p.name,p.price);
+      p.sell=sellScore(p);
+      p.feed=feedScore(p);
+      p.foi=FOI(p);
+      p.roi=roiScore(p);
+      DATA.push(p);
     });
-
-    const data = await res.json();
-
-    if(data.success){
-      logEl.innerHTML += "> ✅ Veo Job Started<br>";
-      logEl.innerHTML += `> 🆔 Operation ID: ${data.operation}<br>`;
-    }else{
-      logEl.innerHTML += "> ❌ Veo API error<br>";
-    }
-
-  }catch(err){
-    logEl.innerHTML += "> ❌ Backend connection failed<br>";
-    console.error(err);
-  }
+  });
+  reloadCategory();
 }
 
-renderPresets();
-renderVeoPresets();
-render();
-</script>  </body>  
+/* ================= UI ================= */
+function reloadCategory(){
+  dashboard();filterCat();render(DATA);buildGPT();
+}
+
+function dashboard(){
+  total.innerText=DATA.length;
+  easy.innerText=DATA.filter(p=>p.foi>=75).length;
+  roiHigh.innerText=DATA.filter(p=>p.roi>=70).length;
+  const c={};DATA.forEach(p=>c[p.category]=(c[p.category]||0)+1);
+  topCat.innerText=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||"-";
+}
+
+function filterCat(){
+  catFilter.innerHTML='<option value="">ทุกหมวด</option>';
+  [...new Set(DATA.map(p=>p.category))].forEach(c=>catFilter.innerHTML+=`<option>${c}</option>`);
+}
+
+function apply(){
+  const q=search.value.toLowerCase(),c=catFilter.value;
+  render(DATA.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!c||p.category===c)));
+}
+
+function render(list){
+  tb.innerHTML="";
+  list.sort((a,b)=>b.foi-a.foi).forEach((p,i)=>{
+    tb.innerHTML+=`
+<tr>
+<td>#${i+1}</td>
+<td>${p.name}<br><small>${p.shop||""}</small></td>
+<td><span class="badge">${p.category}</span></td>
+<td class="foi">${p.foi}</td>
+<td>${p.roi}</td>
+<td>${p.sell}</td>
+<td>${p.feed}</td>
+<td>${p.roi>=70?"💰":"⚠️"}</td>
+</tr>`;
+  });
+}
+
+/* ================= GPT ================= */
+function buildGPT(){
+  gptPrompt.value=DATA.slice(0,10).map((p,i)=>`${i+1}. ${p.name} (${p.category}) FOI:${p.foi}`).join("\n");
+}
+function sendToGPT(){
+  navigator.clipboard.writeText(gptPrompt.value);
+  window.open("https://chat.openai.com","_blank");
+}
+
+/* ================= CLEAR ================= */
+async function clearData(){
+  if(!confirm("ลบข้อมูลทั้งหมด?"))return;
+  await fetch(DB_ROOT+IMPORT_PATH,{method:"DELETE"});
+  DATA=[];reloadCategory();
+}
+
+renderCatUI();
+renderCatManager();
+load();
+</script>
+
+</body>
 </html>
