@@ -103,6 +103,17 @@
       <input type="file" id="img1" accept="image/*" />
       <img id="preview1" class="preview" alt="preview1" />
 
+      <button class="send" onclick="generateImage()">🖼 Generate Image</button>
+
+<img id="genPreview" class="preview" alt="generated image" style="display:none;max-height:320px;" />
+
+<a id="downloadLink"
+   class="copy"
+   style="display:none;text-align:center;text-decoration:none;padding:10px;border-radius:8px;"
+   download="generated.png">
+  ⬇️ Download Image
+</a>
+
       <label style="display:block;margin-top:10px;">รูปที่ 2: รายละเอียดสินค้า</label>
       <input type="file" id="img2" accept="image/*" />
       <img id="preview2" class="preview" alt="preview2" />
@@ -452,6 +463,66 @@ async function sendGPT(){
   }
 }
 
+const IMAGE_API_URL = "https://gpt-backend-xm93.onrender.com/api/generate-image";
+
+async function generateImage(){
+  const soraPrompt = (result.value || "").trim();
+  const img1 = document.getElementById("img1")?.files?.[0] || null;
+
+  if(!img1){
+    log("❌ กรุณาอัปโหลดรูปสินค้า (img1) ก่อน");
+    return;
+  }
+  if(!soraPrompt){
+    log("❌ Sora Prompt ว่าง");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("soraPrompt", soraPrompt);
+  form.append("img1", img1);
+
+  log("🖼 Generating image...");
+
+  try{
+    const res = await fetch(IMAGE_API_URL, { method:"POST", body: form });
+
+    if(res.status === 429){
+      log("⚠️ HTTP 429: โควต้าหรือเรทลิมิต — รอ 30–60 วิ แล้วลองใหม่");
+      return;
+    }
+
+    if(!res.ok){
+      const t = await res.text().catch(()=> "");
+      log(`❌ Image API Error: HTTP ${res.status} | ${t.slice(0,200)}`);
+      return;
+    }
+
+    const payload = await res.json();
+    if(!payload?.success || !payload?.b64){
+      log("❌ API ตอบกลับมา แต่ไม่มีรูป");
+      return;
+    }
+
+    const mime = payload.mime || "image/png";
+    const dataUrl = `data:${mime};base64,${payload.b64}`;
+
+    const img = document.getElementById("genPreview");
+    const dl = document.getElementById("downloadLink");
+
+    img.src = dataUrl;
+    img.style.display = "block";
+
+    dl.href = dataUrl;
+    dl.style.display = "block";
+
+    log("✅ ได้รูปแล้ว สามารถดาวน์โหลดได้");
+  }catch(err){
+    console.error(err);
+    log("❌ Generate image failed: " + (err?.message || err));
+  }
+}
+  
 /** =========================
  * INIT
  * ========================= */
