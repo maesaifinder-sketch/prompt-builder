@@ -97,30 +97,19 @@
 
     <!-- IMAGE REFERENCES -->
     <div class="card">
-      <h2>🖼 รูปอ้างอิง (2 รูป)</h2>
+      <h2>🖼 รูปอ้างอิง</h2>
 
-      <label>รูปที่ 1: ภาพสินค้า</label>
+      <label>รูปที่ 1: ภาพสินค้า (img1)</label>
       <input type="file" id="img1" accept="image/*" />
       <img id="preview1" class="preview" alt="preview1" />
 
-      <button class="send" onclick="generateImage()">🖼 Generate Image</button>
-
-<img id="genPreview" class="preview" alt="generated image" style="display:none;max-height:320px;" />
-
-<a id="downloadLink"
-   class="copy"
-   style="display:none;text-align:center;text-decoration:none;padding:10px;border-radius:8px;"
-   download="generated.png">
-  ⬇️ Download Image
-</a>
-
-      <label style="display:block;margin-top:10px;">รูปที่ 2: รายละเอียดสินค้า</label>
+      <label style="display:block;margin-top:10px;">รูปที่ 2: รายละเอียดสินค้า (img2)</label>
       <input type="file" id="img2" accept="image/*" />
       <img id="preview2" class="preview" alt="preview2" />
 
       <div class="hint">
-        * ตอนนี้ระบบจะ “แนบรูป” ส่งไป Backend พร้อม Sora Prompt<br>
-        * ถ้าจะให้ GPT “ดูรูปจริง” ต้องเปิดโหมด Vision ใน Backend เพิ่ม (ทำได้ภายหลัง)
+        * ตอนนี้เมนู “งาน” จะส่ง soraPrompt + แนบรูปไป Backend เพื่อแปลง prompt<br>
+        * เมนู “ภาพ” จะใช้ img1 + soraPrompt เพื่อให้ Backend เจนภาพ
       </div>
     </div>
 
@@ -158,6 +147,18 @@
     <textarea id="gptPrompt" class="output" readonly></textarea>
     <button class="copy" onclick="copyGPT()">📋 Copy (GPT Prompt)</button>
 
+    <!-- ✅ IMAGE OUTPUT: อยู่ฝั่งขวาใต้ GPT Prompt (มีแค่ชุดเดียว ไม่ซ้ำ id) -->
+    <button id="genImgBtn" class="send" onclick="generateImage()">🎨 Generate Image</button>
+
+    <img id="genPreview" class="preview" alt="generated" style="display:none;margin-top:8px;max-height:260px;" />
+
+    <a id="downloadLink"
+       class="copy"
+       style="display:none;text-align:center;text-decoration:none;margin-top:6px;padding:10px;border-radius:8px;"
+       download="generated.png">
+      ⬇️ Download Image
+    </a>
+
     <div class="log" id="log">> Ready<br></div>
 
   </div>
@@ -167,11 +168,9 @@
 <script>
 /** =========================
  * CONFIG
- * =========================
- * - ถ้าใช้ Render: ใส่ URL ของคุณ
- * - ถ้า local: http://localhost:3000/api/generate-gpt-prompt
- */
-const GPT_API_URL = "https://gpt-backend-xm93.onrender.com/api/generate-gpt-prompt";
+ * ========================= */
+const GPT_API_URL   = "https://gpt-backend-xm93.onrender.com/api/generate-gpt-prompt";
+const IMAGE_API_URL = "https://gpt-backend-xm93.onrender.com/api/generate-image";
 
 /** =========================
  * STORAGE + ELEMENTS
@@ -198,7 +197,7 @@ function escapeHtml(s){
 }
 
 /** =========================
- * IMAGE PREVIEW
+ * IMAGE PREVIEW (upload preview)
  * ========================= */
 function setupPreview(inputId, previewId){
   const input = document.getElementById(inputId);
@@ -400,11 +399,8 @@ async function copyGPT(){
 }
 
 /** =========================
- * SEND GPT (multipart/FormData + 2 images)
- * =========================
- * ต้องให้ Backend รองรับ multipart:
- * - Express + multer: upload.fields([{name:"img1"},{name:"img2"}])
- */
+ * SEND GPT (Work menu) -> /api/generate-gpt-prompt
+ * ========================= */
 async function sendGPT(){
   const sendBtn = document.getElementById("sendBtn");
   sendBtn.disabled = true;
@@ -436,7 +432,7 @@ async function sendGPT(){
 
     if(!res.ok){
       const text = await res.text().catch(()=> "");
-      log(`❌ API Error: HTTP ${res.status}${text ? " | " + text.slice(0,120) : ""}`);
+      log(`❌ API Error: HTTP ${res.status}${text ? " | " + text.slice(0,200) : ""}`);
       return;
     }
 
@@ -463,18 +459,25 @@ async function sendGPT(){
   }
 }
 
-const IMAGE_API_URL = "https://gpt-backend-xm93.onrender.com/api/generate-image";
-
+/** =========================
+ * GENERATE IMAGE (Image menu) -> /api/generate-image
+ * ใช้ img1 + soraPrompt
+ * ========================= */
 async function generateImage(){
+  const btn = document.getElementById("genImgBtn");
+  btn.disabled = true;
+
   const soraPrompt = (result.value || "").trim();
   const img1 = document.getElementById("img1")?.files?.[0] || null;
 
   if(!img1){
     log("❌ กรุณาอัปโหลดรูปสินค้า (img1) ก่อน");
+    btn.disabled = false;
     return;
   }
   if(!soraPrompt){
     log("❌ Sora Prompt ว่าง");
+    btn.disabled = false;
     return;
   }
 
@@ -494,13 +497,13 @@ async function generateImage(){
 
     if(!res.ok){
       const t = await res.text().catch(()=> "");
-      log(`❌ Image API Error: HTTP ${res.status} | ${t.slice(0,200)}`);
+      log(`❌ Image API Error: HTTP ${res.status} | ${t.slice(0,300)}`);
       return;
     }
 
     const payload = await res.json();
     if(!payload?.success || !payload?.b64){
-      log("❌ API ตอบกลับมา แต่ไม่มีรูป");
+      log("❌ API ตอบกลับมา แต่ไม่มีรูป (missing b64)");
       return;
     }
 
@@ -520,9 +523,11 @@ async function generateImage(){
   }catch(err){
     console.error(err);
     log("❌ Generate image failed: " + (err?.message || err));
+  }finally{
+    btn.disabled = false;
   }
 }
-  
+
 /** =========================
  * INIT
  * ========================= */
