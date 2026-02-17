@@ -53,7 +53,6 @@
   .send{background:#0d6efd;color:#fff;border:none}
   .send:disabled{opacity:.6;cursor:not-allowed}
 
-  /* OUTPUT (textarea) */
   .output{
     height:auto;min-height:140px;flex:1;
     background:#000;color:#0f0;font-family:monospace;
@@ -103,13 +102,13 @@
       <input type="file" id="img1" accept="image/*" />
       <img id="preview1" class="preview" alt="preview1" />
 
-      <label style="display:block;margin-top:10px;">รูปที่ 2: รายละเอียดสินค้า (img2)</label>
+      <label style="display:block;margin-top:10px;">รูปที่ 2: รายละเอียดสินค้า (img2) — ใช้กับเมนู “งาน” ได้</label>
       <input type="file" id="img2" accept="image/*" />
       <img id="preview2" class="preview" alt="preview2" />
 
       <div class="hint">
-        * ตอนนี้เมนู “งาน” จะส่ง soraPrompt + แนบรูปไป Backend เพื่อแปลง prompt<br>
-        * เมนู “ภาพ” จะใช้ img1 + soraPrompt เพื่อให้ Backend เจนภาพ
+        * เมนู “งาน”: ส่ง soraPrompt (+img1/img2 ถ้ามี) เพื่อแปลงเป็น Sora video prompt<br>
+        * เมนู “ภาพ”: ใช้เฉพาะ img1 + soraPrompt เพื่อเจนภาพโฆษณา 9:16
       </div>
     </div>
 
@@ -147,7 +146,7 @@
     <textarea id="gptPrompt" class="output" readonly></textarea>
     <button class="copy" onclick="copyGPT()">📋 Copy (GPT Prompt)</button>
 
-    <!-- ✅ IMAGE OUTPUT: อยู่ฝั่งขวาใต้ GPT Prompt (มีแค่ชุดเดียว ไม่ซ้ำ id) -->
+    <!-- ✅ IMAGE OUTPUT (ใต้ GPT Prompt) -->
     <button id="genImgBtn" class="send" onclick="generateImage()">🎨 Generate Image</button>
 
     <img id="genPreview" class="preview" alt="generated" style="display:none;margin-top:8px;max-height:260px;" />
@@ -366,13 +365,50 @@ ${line("ซับ","subtitle")}`.trim();
 }
 
 /** =========================
- * MODES
+ * MODES (toggle buttons)
  * ========================= */
+function setModeUI(mode){
+  const sendBtn = document.getElementById("sendBtn");
+  const genBtn  = document.getElementById("genImgBtn");
+
+  if(mode === "image"){
+    sendBtn.style.display = "none";
+    genBtn.style.display  = "block";
+  }else{
+    sendBtn.style.display = "block";
+    genBtn.style.display  = "none";
+  }
+}
+
 function resetAll(){ Object.keys(data).forEach(k=>data[k].enabled=false); }
-function modeImage(){ resetAll(); ["product","image"].forEach(k=>data[k].enabled=true); save(); render(); }
-function modeWork(){ resetAll(); ["product","work","model","style","mood"].forEach(k=>data[k].enabled=true); save(); render(); }
-function modeVoice(){ resetAll(); ["product","voice"].forEach(k=>data[k].enabled=true); save(); render(); }
-function modeSub(){ resetAll(); ["product","subtitle"].forEach(k=>data[k].enabled=true); save(); render(); }
+
+function modeImage(){
+  resetAll();
+  ["product","image"].forEach(k=>data[k].enabled=true);
+  save(); render();
+  setModeUI("image");
+}
+
+function modeWork(){
+  resetAll();
+  ["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);
+  save(); render();
+  setModeUI("work");
+}
+
+function modeVoice(){
+  resetAll();
+  ["product","voice"].forEach(k=>data[k].enabled=true);
+  save(); render();
+  setModeUI("work");
+}
+
+function modeSub(){
+  resetAll();
+  ["product","subtitle"].forEach(k=>data[k].enabled=true);
+  save(); render();
+  setModeUI("work");
+}
 
 /** =========================
  * COPY
@@ -399,7 +435,7 @@ async function copyGPT(){
 }
 
 /** =========================
- * SEND GPT (Work menu) -> /api/generate-gpt-prompt
+ * SEND GPT (งาน) -> /api/generate-gpt-prompt
  * ========================= */
 async function sendGPT(){
   const sendBtn = document.getElementById("sendBtn");
@@ -426,7 +462,7 @@ async function sendGPT(){
     const res = await fetch(GPT_API_URL, { method:"POST", body: formData });
 
     if(res.status === 429){
-      log("⚠️ API จำกัดการใช้งาน (HTTP 429) — รอ 30–60 วินาที แล้วกดใหม่ 1 ครั้ง");
+      log("⚠️ API จำกัดการใช้งาน (HTTP 429) — รอ 30–60 วินาที แล้วลองใหม่");
       return;
     }
 
@@ -437,11 +473,7 @@ async function sendGPT(){
     }
 
     const payload = await res.json();
-    const prompt =
-      payload?.prompt ||
-      payload?.data?.prompt ||
-      (payload?.success && payload?.prompt) ||
-      "";
+    const prompt = payload?.prompt || payload?.data?.prompt || "";
 
     if(!String(prompt).trim()){
       log("❌ API ตอบกลับมา แต่ไม่พบ prompt");
@@ -460,8 +492,8 @@ async function sendGPT(){
 }
 
 /** =========================
- * GENERATE IMAGE (Image menu) -> /api/generate-image
- * ใช้ img1 + soraPrompt
+ * GENERATE IMAGE (ภาพ) -> /api/generate-image
+ * ใช้เฉพาะ img1 + soraPrompt
  * ========================= */
 async function generateImage(){
   const btn = document.getElementById("genImgBtn");
@@ -511,15 +543,16 @@ async function generateImage(){
     const dataUrl = `data:${mime};base64,${payload.b64}`;
 
     const img = document.getElementById("genPreview");
-    const dl = document.getElementById("downloadLink");
+    const dl  = document.getElementById("downloadLink");
 
     img.src = dataUrl;
     img.style.display = "block";
 
     dl.href = dataUrl;
     dl.style.display = "block";
+    dl.download = payload.filename || "generated.png";
 
-    log("✅ ได้รูปแล้ว สามารถดาวน์โหลดได้");
+    log("✅ ได้รูปแล้ว (แสดงใต้ GPT Prompt) และดาวน์โหลดได้");
   }catch(err){
     console.error(err);
     log("❌ Generate image failed: " + (err?.message || err));
@@ -533,6 +566,7 @@ async function generateImage(){
  * ========================= */
 renderPresets();
 render();
+setModeUI("work"); // ค่าเริ่มต้น: ให้เห็น Send GPT และซ่อน Generate Image
 </script>
 </body>
 </html>
