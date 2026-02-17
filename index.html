@@ -1,474 +1,444 @@
-<!DOCTYPE html>  <html lang="th">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>AI Prompt Builder PRO+</title>  <style>  
-body{  
-  margin:0;  
-  font-family:system-ui;  
-  background:#f2f2f2;  
-}  
-.container{  
-  display:flex;  
-  height:100vh;  
-}  
-  
-/* LEFT */  
-.left{  
-  width:70%;  
-  padding:12px;  
-  margin-right:30%;  
-  overflow:auto;  
-}  
-  
-/* RIGHT */  
-.right{  
-  width:30%;  
-  background:#111;  
-  color:#0f0;  
-  padding:12px;  
-  position:fixed;  
-  right:0;  
-  top:0;  
-  height:100%;  
-}  
-  
-/* TOP BAR */  
-.topbar{  
-  display:flex;  
-  gap:6px;  
-  margin-bottom:12px;  
-  position:sticky;  
-  top:0;  
-  background:#f2f2f2;  
-  z-index:10;  
-}  
-  
-.btn-blue{background:#007bff;color:#fff}  
-.btn-purple{background:#6f42c1;color:#fff}  
-.btn-green{background:#28a745;color:#fff}  
-.btn-orange{background:#fd7e14;color:#fff}  
-  
-/* CARD */  
-.card{  
-  background:#fff;  
-  border-radius:10px;  
-  padding:12px;  
-  margin-bottom:12px;  
-  border-left:5px solid #ddd;  
-}  
-.card.active{  
-  border-left:5px solid #28a745;  
-  box-shadow:0 0 0 2px #28a74533;  
-}  
-  
-.group{  
-  border:2px dashed #bbb;  
-  padding:10px;  
-  border-radius:10px;  
-  margin-bottom:12px;  
-}  
-  
-h2{  
-  margin:0 0 6px 0;  
-  font-size:16px;  
-}  
-  
-select,input,textarea,button{  
-  width:100%;  
-  padding:8px;  
-  margin-top:6px;  
-  border-radius:6px;  
-  border:1px solid #ccc;  
-}  
-  
-.row{  
-  display:flex;  
-  gap:6px;  
-  margin-top:6px;  
-}  
-  
-.add{background:#28a745;color:#fff;border:none}  
-.del{  
-  background:#dc3545;  
-  color:#fff;  
-  border:none;  
-  flex:0.5;  
-}  
-.copy{background:#6c757d;color:#fff;border:none}  
-  
-.auto{
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Builder PRO+</title>
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f2f2f2;
+}
+.container{
+  display:flex;
+  height:100vh;
+}
+
+/* LEFT */
+.left{
+  width:70%;
+  padding:12px;
+  margin-right:30%;
+  overflow:auto;
+}
+
+/* RIGHT */
+.right{
+  width:30%;
+  background:#111;
+  color:#0f0;
+  padding:12px;
+  position:fixed;
+  right:0;
+  top:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+/* TOP BAR */
+.topbar{
+  display:flex;
+  gap:6px;
+  margin-bottom:12px;
+  position:sticky;
+  top:0;
+  background:#f2f2f2;
+  z-index:10;
+}
+
+.btn-blue{background:#007bff;color:#fff}
+.btn-purple{background:#6f42c1;color:#fff}
+.btn-green{background:#28a745;color:#fff}
+.btn-orange{background:#fd7e14;color:#fff}
+
+/* CARD */
+.card{
+  background:#fff;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+  border-left:5px solid #ddd;
+}
+.card.active{
+  border-left:5px solid #28a745;
+  box-shadow:0 0 0 2px #28a74533;
+}
+
+.group{
+  border:2px dashed #bbb;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:12px;
+}
+
+h2{
+  margin:0 0 6px 0;
+  font-size:16px;
+}
+
+select,input,textarea,button{
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+.row{
+  display:flex;
+  gap:6px;
+  margin-top:6px;
+}
+
+.add{background:#28a745;color:#fff;border:none}
+.del{
+  background:#dc3545;
+  color:#fff;
+  border:none;
+  flex:0.5;
+}
+.copy{background:#6c757d;color:#fff;border:none}
+.send{
   background:#0d6efd;
   color:#fff;
   border:none;
-  margin-top:8px;
-  position:sticky;
-  bottom:10px;
-  z-index:20;
-}  
-  
-.output{  
-  height:55%;  
-  background:#000;  
-  color:#0f0;  
-  font-family:monospace;  
-}  
-  
-.log{  
-  margin-top:8px;  
-  background:#000;  
-  color:#0f0;  
-  font-size:12px;  
-  padding:6px;  
-  height:20%;  
-  overflow:auto;  
-  border-radius:6px;  
-}  
-</style>  </head>  <body>  
-<div class="container">  <!-- LEFT -->  <div class="left">    <!-- TOP BAR -->    <div class="topbar">  
-<button class="btn-blue" onclick="modeImage()">🖼 ภาพ</button>
-<button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
-<button class="btn-green" onclick="modeVoice()">🎤 เสียง</button>
-<button class="btn-orange" onclick="modeSub()">✍️ ซับ</button>  
-  </div>    <!-- PRESET -->    <div class="card">  
-    <h2>🎬 Preset Sora</h2>  
-    <select id="presetSora" onchange="loadPreset()"></select>  
-    <input id="presetName" placeholder="ชื่อ Preset">  
-    <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>  
-    <div class="row">  
-      <button class="add" onclick="savePreset()">💾 บันทึก</button>  
-      <button class="del" onclick="deletePreset()">🗑 ลบ</button>  
-    </div>  
-  </div>    <!-- MENU -->    
-<!-- PRESET VEO -->
-<div class="card">
-  <h2>🎬 Preset Veo</h2>
-  <select id="presetVeo" onchange="loadVeoPreset()"></select>
-  <input id="presetVeoName" placeholder="ชื่อ Preset Veo">
-  <textarea id="presetVeoText" rows="6" placeholder="รายละเอียด Preset Veo (motion / camera / ASMR)"></textarea>
-  <div class="row">
-    <button class="add" onclick="saveVeoPreset()">💾 บันทึก</button>
-    <button class="del" onclick="deleteVeoPreset()">🗑 ลบ</button>
+}
+
+/* กล่องข้อความ (textarea) ไม่ใช้ 55% แล้ว */
+.output{
+  height:auto;
+  min-height:140px;      /* กันเตี้ยเกิน */
+  flex:1;                /* ให้กินพื้นที่ที่เหลือ */
+  background:#000;
+  color:#0f0;
+  font-family:monospace;
+}
+
+/* ปรับ log ไม่ให้กินพื้นที่เยอะเกิน */
+.log{
+  margin-top:0;
+  background:#000;
+  color:#0f0;
+  font-size:12px;
+  padding:6px;
+  height:140px;
+  overflow:auto;
+  border-radius:6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LEFT -->
+  <div class="left">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <button class="btn-blue" onclick="modeImage()">🖼 ภาพ</button>
+      <button class="btn-purple" onclick="modeWork()">🧩 งาน</button>
+      <button class="btn-green" onclick="modeVoice()">🎤 เสียง</button>
+      <button class="btn-orange" onclick="modeSub()">✍️ ซับ</button>
+    </div>
+
+    <!-- PRESET SORA -->
+    <div class="card">
+      <h2>🎬 Preset Sora</h2>
+      <select id="presetSora" onchange="loadPreset()"></select>
+      <input id="presetName" placeholder="ชื่อ Preset">
+      <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>
+      <div class="row">
+        <button class="add" onclick="savePreset()">💾 บันทึก</button>
+        <button class="del" onclick="deletePreset()">🗑 ลบ</button>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <div id="menu"></div>
+
   </div>
-</div>
-<div id="menu"></div>  
-</div>  <!-- RIGHT -->  <div class="right">
+
+<!-- RIGHT -->
+<div class="right">
 
   <h2>📄 Sora Prompt</h2>
   <textarea id="result" class="output" readonly></textarea>
-  <button class="copy" onclick="copyText()">📋 Copy (Sora Prompt)</button>
 
-  <hr style="margin:10px 0;border-color:#333">
-
-  <h2>🎬 Veo Prompt</h2>
-  <textarea id="veoPrompt" class="output" readonly></textarea>
-
-  <button class="auto" onclick="autoGenerate()">
-    🎬 Auto Generate (Veo via Flow)
-  </button>
-
-  <div class="log" id="log">
-    > Ready for Auto Generate Mode<br>
+  <div class="row">
+    <button class="copy" onclick="copySora()">📋 Copy (Sora Prompt)</button>
+    <button class="send" onclick="sendGPT()">🚀 Send GPT</button>
   </div>
 
-</div>  </div>  <script>  
-    
+  <hr style="margin:6px 0;border-color:#333">
+
+  <h2>🤖 GPT Prompt</h2>
+  <textarea id="gptPrompt" class="output" readonly></textarea>
+
+  <!-- ✅ ปุ่ม Copy GPT Prompt จะเห็นชัดแน่นอน -->
+  <button class="copy" onclick="copyGPT()">📋 Copy (GPT Prompt)</button>
+
+  <div class="log" id="log">
+    > Ready<br>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+/** =========================
+ * CONFIG
+ * ========================= */
+const GPT_API_URL = "http://localhost:3000/api/generate-gpt-prompt";
+/*
+  คาดหวัง backend ตอบกลับ JSON รูปแบบใดรูปแบบหนึ่ง:
+  1) { success:true, prompt:"...." }
+  2) { prompt:"...." }
+  3) { data:{ prompt:"...." } }
+*/
+
+/** =========================
+ * STORAGE + ELEMENTS
+ * ========================= */
+const LS="PROMPT_BUILDER_DATA";
+const LS_PRESET="SORA_PRESETS";
+
+const presetSora=document.getElementById("presetSora");
+const presetName=document.getElementById("presetName");
+const presetText=document.getElementById("presetText");
+const result=document.getElementById("result");
+const logBox=document.getElementById("log");
+const gptBox=document.getElementById("gptPrompt");
+
+/** =========================
+ * HELPERS
+ * ========================= */
+function log(msg){
+  logBox.innerHTML += `> ${msg}<br>`;
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
 function getValue(key){
   if(!data[key] || !data[key].enabled) return "";
   const s = document.getElementById(key + "_s");
   return s ? s.value : "";
 }
 
-function buildVeoPrompt(){
-  const product = getValue("product");
-  const work = getValue("work");
-  const model = getValue("model");
-  const style = getValue("style");
-  const mood = getValue("mood");
-  const voice = getValue("voice");
-
-  const veoPreset =
-  presetVeo && veoPresets[presetVeo.value]
-  ? veoPresets[presetVeo.value].text
-  : "";
-
-  return `
-${veoPreset}
-
-SUBJECT:
-${product || "A product"} in ${work || "UGC-style"} video.
-${model ? `Featuring ${model}.` : ""}
-
-SCENE:
-${style || "Clean"} environment with ${mood || "natural"} mood.
-
-AUDIO:
-${voice || "No voice specified"}
-
-QUALITY:
-Ultra realistic, cinematic lighting, smooth motion.
-`.trim();
-}
-  
-const LS="PROMPT_BUILDER_DATA";  
-const LS_VEO_PRESET = "VEO_PRESETS";
-const LS_PRESET="SORA_PRESETS";  
-  
-const presetSora=document.getElementById("presetSora");  
-const presetName=document.getElementById("presetName");  
-const presetText=document.getElementById("presetText");  
-const result=document.getElementById("result");  
-const logBox=document.getElementById("log");  
-const veoBox=document.getElementById("veoPrompt");
-// ===== VEO PRESET VARIABLES (STEP 3) =====
-const presetVeo = document.getElementById("presetVeo");
-const presetVeoName = document.getElementById("presetVeoName");
-const presetVeoText = document.getElementById("presetVeoText");
-
-let veoPresets = JSON.parse(localStorage.getItem(LS_VEO_PRESET)) || {
-  ugc_motion:{
-    name:"UGC Motion Basic",
-    text:`FORMAT:
-Vertical 9:16 UGC-style video.
-
-CAMERA:
-Handheld smartphone feel, slow push-in.
-
-MOTION:
-Natural hand movement, soft fabric motion.
-
-LIGHTING:
-Soft natural lighting.
-
-DURATION:
-15 seconds, cinematic realism.`
-  }
+/** =========================
+ * SORA PRESETS
+ * ========================= */
+let soraPresets = JSON.parse(localStorage.getItem(LS_PRESET)) || {
+  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}
 };
 
-// ===== VEO PRESET FUNCTIONS =====
-function renderVeoPresets(){
-  presetVeo.innerHTML = "";
-  Object.keys(veoPresets).forEach(k=>{
-    const o = document.createElement("option");
-    o.value = k;
-    o.textContent = veoPresets[k].name;
-    presetVeo.appendChild(o);
+function renderPresets(){
+  presetSora.innerHTML="";
+  Object.keys(soraPresets).forEach(k=>{
+    const o=document.createElement("option");
+    o.value=k;
+    o.textContent=soraPresets[k].name;
+    presetSora.appendChild(o);
   });
-  loadVeoPreset();
+  loadPreset();
 }
 
-function loadVeoPreset(){
-  const p = veoPresets[presetVeo.value];
+function loadPreset(){
+  const p=soraPresets[presetSora.value];
   if(!p) return;
-  presetVeoName.value = p.name;
-  presetVeoText.value = p.text;
+  presetName.value=p.name;
+  presetText.value=p.text;
   update();
 }
 
-function saveVeoPreset(){
-  if(!presetVeoName.value) return alert("กรอกชื่อ Preset Veo");
-  const k = presetVeoName.value.toLowerCase().replace(/\s+/g,"_");
-  veoPresets[k] = {
-    name: presetVeoName.value,
-    text: presetVeoText.value
-  };
-  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
-  renderVeoPresets();
-  presetVeo.value = k;
+function savePreset(){
+  if(!presetName.value) return alert("กรอกชื่อ Preset");
+  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");
+  soraPresets[k]={name:presetName.value,text:presetText.value};
+  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));
+  renderPresets();
+  presetSora.value=k;
 }
-
-function deleteVeoPreset(){
-  if(!confirm("ยืนยันการลบ Preset Veo นี้ ?")) return;
-  delete veoPresets[presetVeo.value];
-  localStorage.setItem(LS_VEO_PRESET, JSON.stringify(veoPresets));
-  renderVeoPresets();
-}
-  
-let soraPresets=JSON.parse(localStorage.getItem(LS_PRESET)) || {  
-  ugc:{name:"UGC รีวิวสินค้า",text:"A vertical 9:16 UGC-style video.\nNatural lighting.\n15 seconds."}  
-};  
-  
-function log(msg){  
-  logBox.innerHTML += `> ${msg}<br>`;  
-  logBox.scrollTop = logBox.scrollHeight;  
-}  
-  
-function renderPresets(){  
-  presetSora.innerHTML="";  
-  Object.keys(soraPresets).forEach(k=>{  
-    const o=document.createElement("option");  
-    o.value=k;  
-    o.textContent=soraPresets[k].name;  
-    presetSora.appendChild(o);  
-  });  
-  loadPreset();  
-}  
-  
-function loadPreset(){  
-  const p=soraPresets[presetSora.value];  
-  if(!p) return;  
-  presetName.value=p.name;  
-  presetText.value=p.text;  
-  update();  
-}  
-  
-function savePreset(){  
-  if(!presetName.value) return alert("กรอกชื่อ Preset");  
-  const k=presetName.value.toLowerCase().replace(/\s+/g,"_");  
-  soraPresets[k]={name:presetName.value,text:presetText.value};  
-  localStorage.setItem(LS_PRESET,JSON.stringify(soraPresets));  
-  renderPresets();  
-  presetSora.value=k;  
-}  
 
 function deletePreset(){
   if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;
   delete soraPresets[presetSora.value];
   localStorage.setItem(LS_PRESET, JSON.stringify(soraPresets));
   renderPresets();
-}  
-  
-let data=JSON.parse(localStorage.getItem(LS)) || {  
-  image:{enabled:false,items:["แต่งภาพ 9:16"]},  
-  product:{enabled:false,items:["ท็อปเปอร์"]},  
-  work:{enabled:false,items:["UGC รีวิว"]},  
-  model:{enabled:false,items:["นางแบบเอเชีย"]},  
-  style:{enabled:false,items:["Luxury"]},  
-  mood:{enabled:false,items:["อบอุ่น"]},  
-  voice:{enabled:false,items:["เสียงผู้หญิง"]},  
-  subtitle:{enabled:false,items:["ซับขาย"]}  
-};  
-  
-function save(){localStorage.setItem(LS,JSON.stringify(data));}  
-  
-function section(title,key){  
-  const c=data[key];  
-  if(!c.enabled) return "";  
-  return `  
-  <div class="card active" id="sec-${key}">  
-    <h2>${title}</h2>  
-    <select id="${key}_s" onchange="update()">  
-      ${c.items.map(v=>`<option>${v}</option>`).join("")}  
-    </select>  
-    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">  
-    <div class="row">  
-      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>  
-      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>  
-    </div>  
-  </div>`;  
-}  
-  
-function render(){  
-  document.getElementById("menu").innerHTML=  
-    section("🖼 หมวดสร้างภาพ","image")+  
-    section("📦 หมวดสินค้า","product")+  
-    section("🧠 ประเภทงาน","work")+  
-    section("👤 นายแบบ / นางแบบ","model")+  
-    section("🎬 สไตล์ VDO","style")+  
-    section("🌤 บรรยากาศ","mood")+  
-    section("🎤 เสียงพากย์","voice")+  
-    section("✍️ สร้างซับไตเติล","subtitle");  
-  update();  
-}  
-  
-function toggle(k,v){  
-  data[k].enabled=v;  
-  save();  
-  render();  
-}  
-  
-function add(k){  
-  const i=document.getElementById(k+"_i");  
-  if(!i.value) return;  
-  data[k].items.push(i.value);  
-  i.value="";  
-  save();  
-  render();  
-}  
-  
-function delItem(k){  
-  const s=document.getElementById(k+"_s");  
-  if(!s) return;  
-  if(!confirm(`ยืนยันการลบ "${s.value}" ?`)) return;  
-  data[k].items.splice(s.selectedIndex,1);  
-  save();  
-  render();  
-}  
-  
-function line(t,k){  
-  if(!data[k].enabled) return "";  
-  const s=document.getElementById(k+"_s");  
-  return s?`${t}: ${s.value}\n`:"";  
-}  
-  
-function update(){  
-  const p=soraPresets[presetSora.value];  
-  result.value=  
-`###  ###  
-${p?p.text:""}  
-  
-### DETAIL ###  
-${line("ช่วยสร้างภาพ จำนวน1ภาพ (ไม่ใช่สร้างPrompt) รายละเอียดดังนี้","image")}  
-${line("สินค้า","product")}  
-${line("ประเภทงาน","work")}  
-${line("นายแบบ/นางแบบ","model")}  
-${line("สไตล์","style")}  
-${line("บรรยากาศ","mood")}  
-${line("เสียงพากย์","voice")}  
-${line("ซับ","subtitle")}`;  
-veoBox.value = buildVeoPrompt();
-}  
-  
-function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}  
-function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeVoice(){resetAll();["product","voice"].forEach(k=>data[k].enabled=true);save();render();}  
-function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}  
-  
-function copyText(){  
-  result.select();  
-  navigator.clipboard.writeText(result.value);  
-  log("Copy prompt for Sora สำเร็จ");  
-}  
-  
-async function autoGenerate(){
-  const veoPrompt = buildVeoPrompt();
-  const logEl = document.getElementById("log");
+}
 
-  if(!veoPrompt || typeof veoPrompt !== "string" || !veoPrompt.trim()){
-    logEl.innerHTML += "> ❌ Veo prompt is empty<br>";
+/** =========================
+ * DATA SECTIONS (LEFT MENU)
+ * ========================= */
+let data=JSON.parse(localStorage.getItem(LS)) || {
+  image:{enabled:false,items:["แต่งภาพ 9:16"]},
+  product:{enabled:false,items:["ท็อปเปอร์"]},
+  work:{enabled:false,items:["UGC รีวิว"]},
+  model:{enabled:false,items:["นางแบบเอเชีย"]},
+  style:{enabled:false,items:["Luxury"]},
+  mood:{enabled:false,items:["อบอุ่น"]},
+  voice:{enabled:false,items:["เสียงผู้หญิง"]},
+  subtitle:{enabled:false,items:["ซับขาย"]}
+};
+
+function save(){localStorage.setItem(LS,JSON.stringify(data));}
+
+function section(title,key){
+  const c=data[key];
+  if(!c.enabled) return "";
+  return `
+  <div class="card active" id="sec-${key}">
+    <h2>${title}</h2>
+    <select id="${key}_s" onchange="update()">
+      ${c.items.map(v=>`<option>${v}</option>`).join("")}
+    </select>
+    <input id="${key}_i" placeholder="เพิ่ม / แก้ไข">
+    <div class="row">
+      <button class="add" onclick="add('${key}')">➕ เพิ่ม</button>
+      <button class="del" onclick="delItem('${key}')">🗑 ลบ</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.getElementById("menu").innerHTML =
+    section("🖼 หมวดสร้างภาพ","image")+
+    section("📦 หมวดสินค้า","product")+
+    section("🧠 ประเภทงาน","work")+
+    section("👤 นายแบบ / นางแบบ","model")+
+    section("🎬 สไตล์ VDO","style")+
+    section("🌤 บรรยากาศ","mood")+
+    section("🎤 เสียงพากย์","voice")+
+    section("✍️ สร้างซับไตเติล","subtitle");
+  update();
+}
+
+function toggle(k,v){
+  data[k].enabled=v;
+  save();
+  render();
+}
+
+function add(k){
+  const i=document.getElementById(k+"_i");
+  if(!i.value) return;
+  data[k].items.push(i.value);
+  i.value="";
+  save();
+  render();
+}
+
+function delItem(k){
+  const s=document.getElementById(k+"_s");
+  if(!s) return;
+  if(!confirm(`ยืนยันการลบ "${s.value}" ?`)) return;
+  data[k].items.splice(s.selectedIndex,1);
+  save();
+  render();
+}
+
+function line(t,k){
+  if(!data[k].enabled) return "";
+  const s=document.getElementById(k+"_s");
+  return s?`${t}: ${s.value}\n`:"";
+}
+
+/** =========================
+ * BUILD SORA PROMPT
+ * ========================= */
+function update(){
+  const p=soraPresets[presetSora.value];
+  result.value =
+`###  ###
+${p?p.text:""}
+
+### DETAIL ###
+${line("ช่วยสร้างภาพ จำนวน1ภาพ (ไม่ใช่สร้างPrompt) รายละเอียดดังนี้","image")}
+${line("สินค้า","product")}
+${line("ประเภทงาน","work")}
+${line("นายแบบ/นางแบบ","model")}
+${line("สไตล์","style")}
+${line("บรรยากาศ","mood")}
+${line("เสียงพากย์","voice")}
+${line("ซับ","subtitle")}`.trim();
+}
+
+/** =========================
+ * MODES
+ * ========================= */
+function resetAll(){Object.keys(data).forEach(k=>data[k].enabled=false);}
+function modeImage(){resetAll();["product","image"].forEach(k=>data[k].enabled=true);save();render();}
+function modeWork(){resetAll();["product","work","model","style","mood"].forEach(k=>data[k].enabled=true);save();render();}
+function modeVoice(){resetAll();["product","voice"].forEach(k=>data[k].enabled=true);save();render();}
+function modeSub(){resetAll();["product","subtitle"].forEach(k=>data[k].enabled=true);save();render();}
+
+/** =========================
+ * COPY BUTTONS
+ * ========================= */
+function copySora(){
+  result.select();
+  navigator.clipboard.writeText(result.value);
+  log("Copy Sora Prompt สำเร็จ");
+}
+
+function copyGPT(){
+  gptBox.select();
+  navigator.clipboard.writeText(gptBox.value || "");
+  log("Copy GPT Prompt สำเร็จ");
+}
+
+/** =========================
+ * SEND GPT (API)
+ * ========================= */
+async function sendGPT(){
+  const soraPrompt = (result.value || "").trim();
+  if(!soraPrompt){
+    log("❌ Sora Prompt ว่าง");
     return;
   }
 
-  logEl.innerHTML += "> 🎬 Sending Veo Prompt...<br>";
-  logEl.innerHTML += "<pre style='color:#0f0'>" + veoPrompt + "</pre>";
-
+  log("🚀 Sending to GPT API...");
   try{
-    const res = await fetch("http://localhost:3000/api/generate-video",{
+    const res = await fetch(GPT_API_URL, {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        prompt: veoPrompt
-      })
+      body: JSON.stringify({ soraPrompt })
     });
 
-    const data = await res.json();
-
-    if(data.success){
-      logEl.innerHTML += "> ✅ Veo Job Started<br>";
-      logEl.innerHTML += `> 🆔 Operation ID: ${data.operation}<br>`;
-    }else{
-      logEl.innerHTML += "> ❌ Veo API error<br>";
+    if(!res.ok){
+      log(`❌ API Error: HTTP ${res.status}`);
+      return;
     }
 
+    const payload = await res.json();
+
+    // รองรับหลายรูปแบบ response
+    const prompt =
+      (payload && payload.prompt) ||
+      (payload && payload.data && payload.data.prompt) ||
+      (payload && payload.success && payload.prompt) ||
+      "";
+
+    if(!prompt || !String(prompt).trim()){
+      log("❌ API ตอบกลับมา แต่ไม่พบ prompt");
+      return;
+    }
+
+    gptBox.value = String(prompt).trim();
+    log("✅ ได้ GPT Prompt แล้ว");
   }catch(err){
-    logEl.innerHTML += "> ❌ Backend connection failed<br>";
     console.error(err);
+    log("❌ เชื่อมต่อ Backend ไม่ได้ (ตรวจสอบ URL / CORS / Server)");
   }
 }
 
+/** =========================
+ * INIT
+ * ========================= */
 renderPresets();
-renderVeoPresets();
 render();
-</script>  </body>  
+</script>
+</body>
 </html>
