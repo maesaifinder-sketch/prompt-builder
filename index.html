@@ -192,7 +192,13 @@ function log(msg){
   logBox.scrollTop = logBox.scrollHeight;
 }
 function escapeHtml(s){
-  return s.replace(/[&<>"']/g, m => ({'&':'&','<':'<','>':'>','"':'"',"'":'''}[m]));
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[m]));
 }
 
 /** =========================
