@@ -107,15 +107,15 @@
       <img id="preview2" class="preview" alt="preview2" />
 
       <div class="hint">
-        * เมนู “งาน”: ส่ง soraPrompt (+img1/img2 ถ้ามี) เพื่อแปลงเป็น Sora video prompt<br>
-        * เมนู “ภาพ”: ใช้เฉพาะ img1 + soraPrompt เพื่อเจนภาพโฆษณา 9:16
+        * เมนู “งาน”: ส่ง GrokPrompt (+img1/img2 ถ้ามี) เพื่อแปลงเป็น Grok video prompt<br>
+        * เมนู “ภาพ”: ใช้เฉพาะ img1 + GrokPrompt เพื่อเจนภาพโฆษณา 9:16
       </div>
     </div>
 
-    <!-- PRESET SORA -->
+    <!-- PRESET Grok -->
     <div class="card">
-      <h2>🎬 Preset Sora</h2>
-      <select id="presetSora" onchange="loadPreset()"></select>
+      <h2>🎬 Preset Grok</h2>
+      <select id="presetGrok" onchange="loadPreset()"></select>
       <input id="presetName" placeholder="ชื่อ Preset" />
       <textarea id="presetText" rows="4" placeholder="รายละเอียด Preset"></textarea>
       <div class="row">
@@ -132,11 +132,11 @@
   <!-- RIGHT -->
   <div class="right">
 
-    <h2>📄 Sora Prompt</h2>
+    <h2>📄 Grok Prompt</h2>
     <textarea id="result" class="output" readonly></textarea>
 
     <div class="row">
-      <button class="copy" onclick="copySora()">📋 Copy (Sora Prompt)</button>
+      <button class="copy" onclick="copyGrok()">📋 Copy (Grok Prompt)</button>
       <button id="sendBtn" class="send" onclick="sendGPT()">🚀 Send GPT</button>
     </div>
 
@@ -175,9 +175,9 @@ const IMAGE_API_URL = "https://gpt-backend-xm93.onrender.com/api/generate-image"
  * STORAGE + ELEMENTS
  * ========================= */
 const LS = "PROMPT_BUILDER_DATA";
-const LS_PRESET = "SORA_PRESETS";
+const LS_PRESET = "Grok_PRESETS";
 
-const presetSora = document.getElementById("presetSora");
+const presetGrok = document.getElementById("presetGrok");
 const presetName = document.getElementById("presetName");
 const presetText = document.getElementById("presetText");
 const result = document.getElementById("result");
@@ -227,9 +227,9 @@ setupPreview("img1", "preview1");
 setupPreview("img2", "preview2");
 
 /** =========================
- * SORA PRESETS
+ * Grok PRESETS
  * ========================= */
-let soraPresets = JSON.parse(localStorage.getItem(LS_PRESET)) || {
+let GrokPresets = JSON.parse(localStorage.getItem(LS_PRESET)) || {
   ugc:{
     name:"UGC รีวิวสินค้า",
     text:[
@@ -238,7 +238,7 @@ let soraPresets = JSON.parse(localStorage.getItem(LS_PRESET)) || {
       "Natural lighting, handheld camera, slight camera movement.",
       "Soft daylight, cozy atmosphere.",
       "Realistic skin texture, authentic facial expressions.",
-      "15 seconds.",
+      "10 seconds.",
       "High quality, cinematic but natural.",
       "Optimized for TikTok."
     ].join("\n")
@@ -246,18 +246,18 @@ let soraPresets = JSON.parse(localStorage.getItem(LS_PRESET)) || {
 };
 
 function renderPresets(){
-  presetSora.innerHTML = "";
-  Object.keys(soraPresets).forEach(k=>{
+  presetGrok.innerHTML = "";
+  Object.keys(GrokPresets).forEach(k=>{
     const o=document.createElement("option");
     o.value=k;
-    o.textContent=soraPresets[k].name;
-    presetSora.appendChild(o);
+    o.textContent=GrokPresets[k].name;
+    presetGrok.appendChild(o);
   });
   loadPreset();
 }
 
 function loadPreset(){
-  const p = soraPresets[presetSora.value];
+  const p = GrokPresets[presetGrok.value];
   if(!p) return;
   presetName.value = p.name;
   presetText.value = p.text;
@@ -267,16 +267,16 @@ function loadPreset(){
 function savePreset(){
   if(!presetName.value) return alert("กรอกชื่อ Preset");
   const k = presetName.value.toLowerCase().replace(/\s+/g,"_");
-  soraPresets[k] = { name: presetName.value, text: presetText.value };
-  localStorage.setItem(LS_PRESET, JSON.stringify(soraPresets));
+  GrokPresets[k] = { name: presetName.value, text: presetText.value };
+  localStorage.setItem(LS_PRESET, JSON.stringify(GrokPresets));
   renderPresets();
-  presetSora.value = k;
+  presetGrok.value = k;
 }
 
 function deletePreset(){
   if(!confirm("ยืนยันการลบ Preset นี้ ?")) return;
-  delete soraPresets[presetSora.value];
-  localStorage.setItem(LS_PRESET, JSON.stringify(soraPresets));
+  delete GrokPresets[presetGrok.value];
+  localStorage.setItem(LS_PRESET, JSON.stringify(GrokPresets));
   renderPresets();
 }
 
@@ -351,10 +351,10 @@ function line(t,k){
 }
 
 /** =========================
- * BUILD SORA PROMPT
+ * BUILD Grok PROMPT
  * ========================= */
 function update(){
-  const p = soraPresets[presetSora.value];
+  const p = GrokPresets[presetGrok.value];
   result.value =
 `###  ###
 ${p ? p.text : ""}
@@ -419,14 +419,14 @@ function modeSub(){
 /** =========================
  * COPY
  * ========================= */
-async function copySora(){
+async function copyGrok(){
   try{
     await navigator.clipboard.writeText(result.value || "");
-    log("Copy Sora Prompt สำเร็จ");
+    log("Copy Grok Prompt สำเร็จ");
   }catch{
     result.select();
     document.execCommand("copy");
-    log("Copy Sora Prompt สำเร็จ (fallback)");
+    log("Copy Grok Prompt สำเร็จ (fallback)");
   }
 }
 async function copyGPT(){
@@ -447,9 +447,9 @@ async function sendGPT(){
   const sendBtn = document.getElementById("sendBtn");
   sendBtn.disabled = true;
 
-  const soraPrompt = (result.value || "").trim();
-  if(!soraPrompt){
-    log("❌ Sora Prompt ว่าง");
+  const GrokPrompt = (result.value || "").trim();
+  if(!GrokPrompt){
+    log("❌ Grok Prompt ว่าง");
     sendBtn.disabled = false;
     return;
   }
@@ -458,7 +458,7 @@ async function sendGPT(){
   const img2 = document.getElementById("img2")?.files?.[0] || null;
 
   const formData = new FormData();
-  formData.append("soraPrompt", soraPrompt);
+  formData.append("GrokPrompt", GrokPrompt);
   if(img1) formData.append("img1", img1);
   if(img2) formData.append("img2", img2);
 
@@ -499,13 +499,13 @@ async function sendGPT(){
 
 /** =========================
  * GENERATE IMAGE (ภาพ) -> /api/generate-image
- * ใช้เฉพาะ img1 + soraPrompt
+ * ใช้เฉพาะ img1 + GrokPrompt
  * ========================= */
 async function generateImage(){
   const btn = document.getElementById("genImgBtn");
   btn.disabled = true;
 
-  const soraPrompt = (result.value || "").trim();
+  const GrokPrompt = (result.value || "").trim();
   const img1 = document.getElementById("img1")?.files?.[0] || null;
 
   if(!img1){
@@ -513,14 +513,14 @@ async function generateImage(){
     btn.disabled = false;
     return;
   }
-  if(!soraPrompt){
-    log("❌ Sora Prompt ว่าง");
+  if(!GrokPrompt){
+    log("❌ Grok Prompt ว่าง");
     btn.disabled = false;
     return;
   }
 
   const form = new FormData();
-  form.append("soraPrompt", soraPrompt);
+  form.append("GrokPrompt", GrokPrompt);
   form.append("img1", img1);
 
   log("🖼 Generating image...");
